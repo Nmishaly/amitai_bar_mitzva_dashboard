@@ -85,7 +85,6 @@ function startFirebaseListeners() {
     const roomsRef = getCollectionRef('rooms');
     const rsvpsRef = getCollectionRef('rsvps');
     const budgetRef = getCollectionRef('budget');
-    const guestDietsRef = getCollectionRef('guestDiets');
 
     const logRef = getCollectionRef('logistics');
     logRef.onSnapshot(snapshot => {
@@ -124,19 +123,6 @@ function startFirebaseListeners() {
         if (currentTab === 'menu') renderMenu();
     }, error => {
         handleFirestoreError(error, "תפריט");
-    });
-
-    // Guest Diets snapshot - NEW!
-    guestDietsRef.onSnapshot(snapshot => {
-        const cloudGuestDiets = [];
-        if (!snapshot.empty) {
-            snapshot.forEach(doc => cloudGuestDiets.push(doc.data()));
-        }
-        guestDiets = cloudGuestDiets;
-        localStorage.setItem('bm_guestDiets', JSON.stringify(guestDiets));
-        if (currentTab === 'menu') renderGuestDiets();
-    }, error => {
-        handleFirestoreError(error, "דרישות דיאטה של אורחים");
     });
 
     // Tasks snapshot
@@ -311,3 +297,6 @@ function parseFirebaseConfig(text) {
     
     return null;
 }
+
+
+
