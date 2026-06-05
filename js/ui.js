@@ -630,39 +630,32 @@ function renderMenu() {
 }
 
 function renderSchedule() {
-    const container = document.getElementById('scheduleContainer');
-    container.innerHTML = "";
-    
-    schedule.sort((a, b) => {
-        const dayOrder = { 'שישי': 1, 'שבת': 2 };
-        return (dayOrder[a.day] - dayOrder[b.day]) || a.time.localeCompare(b.time);
+    // 1. ניקוי המיכלים (מבלי למחוק את הכותרות)
+    document.getElementById('activity-bank').innerHTML = "";
+    document.querySelectorAll('[id^="col-"]').forEach(col => {
+        // מוחקים רק את האלמנטים שהם פעילויות ולא את כותרת הריבוע
+        const items = col.querySelectorAll('[id^="act_"]');
+        items.forEach(i => i.remove());
     });
-
+    
+    // 2. רינדור מחדש
     schedule.forEach(item => {
-        if (editingScheduleId === item.id) {
-            // תצוגת עריכה
-            container.insertAdjacentHTML('beforeend', `
-                <div class="bg-indigo-50 p-4 rounded-xl border border-indigo-200 shadow-sm space-y-2">
-                    <input type="text" id="editSchTitle" value="${item.title}" class="w-full p-1 border rounded text-sm">
-                    <div class="grid grid-cols-2 gap-2">
-                        <select id="editSchDay"><option value="שישי" ${item.day==='שישי'?'selected':''}>שישי</option><option value="שבת" ${item.day==='שבת'?'selected':''}>שבת</option></select>
-                        <input type="time" id="editSchTime" value="${item.time}" class="p-1 border rounded text-sm">
-                    </div>
-                    <input type="text" id="editSchSpeaker" value="${item.speaker}" class="w-full p-1 border rounded text-sm">
-                    <button onclick="saveEditSchedule('${item.id}')" class="bg-indigo-600 text-white w-full py-1 rounded text-xs font-bold">שמור</button>
-                </div>
-            `);
-        } else {
-            // תצוגה רגילה
-            container.insertAdjacentHTML('beforeend', `
-                <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex justify-between items-center cursor-pointer" onclick="editScheduleItem('${item.id}')">
-                    <div>
-                        <div class="font-bold text-sm text-indigo-950">${item.title}</div>
-                        <div class="text-[11px] text-slate-600">${item.day} | ⏰ ${item.time} | 👤 ${item.speaker || 'ללא'}</div>
-                    </div>
-                    <button onclick="deleteScheduleItem('${item.id}')" class="text-red-400 hover:text-red-600 font-bold px-2">✕</button>
-                </div>
-            `);
+        // יצירת האלמנט
+        const itemHtml = `
+            <div id="act_${item.id}" draggable="true" ondragstart="drag(event)" 
+                 class="w-40 min-h-[120px] bg-white p-3 rounded-lg shadow cursor-move text-sm font-semibold border-r-4 border-indigo-500 flex flex-col justify-between overflow-hidden">
+                <div class="font-bold leading-tight break-words">${item.title}</div>
+                ${item.speaker ? `<div class="text-[10px] text-slate-500 mt-1">👤 ${item.speaker}</div>` : ''}
+                <button onclick="deleteScheduleItem('${item.id}')" class="text-red-400 text-[10px] underline self-start mt-2">מחק</button>
+            </div>
+        `;
+
+        // 3. לוגיקה בטוחה: אם אין location, שים בבנק
+        const targetId = (item.location && document.getElementById(item.location)) ? item.location : 'bank';
+        const targetContainer = document.getElementById(targetId === 'bank' ? 'activity-bank' : targetId);
+        
+        if (targetContainer) {
+            targetContainer.insertAdjacentHTML('beforeend', itemHtml);
         }
     });
 }
@@ -814,4 +807,47 @@ function generateLogisticsSummary() {
     document.getElementById('logSummaryText').value = msg;
     document.getElementById('logSummaryModal').classList.remove('hidden');
 }
+
+function allowDrop(ev) {
+    ev.preventDefault();
+}
+
+function drag(ev) {
+    ev.dataTransfer.setData("text", ev.target.id);
+}
+
+async function drop(ev) {
+    ev.preventDefault();
+    const data = ev.dataTransfer.getData("text");
+    const draggedElement = document.getElementById(data);
+    let target = ev.target;
+    
+    // מציאת הריבוע (קונטיינר) אליו גררנו
+    while (target && !target.id.startsWith('col-') && target.id !== 'bank') {
+        target = target.parentElement;
+    }
+    
+    if (target) {
+        // 1. העברה ויזואלית מיידית (לפני הכל!)
+        target.appendChild(draggedElement);
+        
+        // 2. עדכון הנתונים
+        const activityId = data.replace('act_', '');
+        const task = schedule.find(s => s.id === activityId);
+        
+        if (task) {
+            const newLocation = target.id;
+            task.location = newLocation;
+            saveLocalState();
+            
+            // 3. עדכון ענן
+            if (isCloudConnected && db) {
+                dbUpdate('schedule', activityId, { location: newLocation });
+            }
+        }
+        showToast("הפעילות שובצה!");
+    }
+}
+
+
 

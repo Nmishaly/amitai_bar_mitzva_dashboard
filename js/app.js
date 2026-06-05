@@ -966,23 +966,21 @@ function saveEditMenu(id) {
 
 async function addNewScheduleItem() {
     const titleEl = document.getElementById('schTitle');
-    const dayEl = document.getElementById('schDay');
-    const timeEl = document.getElementById('schTime');
     const speakerEl = document.getElementById('schSpeaker');
-    const overlapEl = document.getElementById('schOverlap');
 
-    if (!titleEl.value.trim() || !timeEl.value) {
-        alert("נא להזין שם פעילות ושעה!");
+    // בדיקה מעודכנת לפי השדות החדשים ב-HTML
+    if (!titleEl.value.trim()) {
+        alert("נא להזין שם פעילות!");
         return;
     }
 
     const item = {
         id: 'sch_' + Date.now(),
         title: titleEl.value.trim(),
-        day: dayEl.value,
-        time: timeEl.value,
-        speaker: speakerEl.value.trim(),
-        overlap: overlapEl ? overlapEl.checked : false
+        speaker: speakerEl.value ? speakerEl.value.trim() : "",
+        day: "",      // שדה ריק כי הגרירה תקבע את היום
+        time: "",     // שדה ריק כי הגרירה תקבע את השעה
+        overlap: false
     };
     
     // 1. הוספה למערך המקומי
@@ -991,22 +989,21 @@ async function addNewScheduleItem() {
     // 2. שמירה מקומית (LocalStorage)
     saveLocalState();
     
-    // 3. רינדור למסך
+    // 3. רינדור למסך (הפונקציה הזו תצייר את הפעילות בבנק)
     renderSchedule();
 
-    // 4. הוספה לענן (Firebase) - זה היה חסר!
+    // 4. הוספה לענן (Firebase)
     if (isCloudConnected && db) {
-        dbSet('schedule', item.id, item); // השתמשנו ב-item.id ולא ב-id לא קיים
+        dbSet('schedule', item.id, item);
     }
     
     // ניקוי שדות
     titleEl.value = "";
-    timeEl.value = "";
     speakerEl.value = "";
-    if (overlapEl) overlapEl.checked = false;
     
-    showToast("הפעילות נוספה בהצלחה!");
+    showToast("הפעילות נוספה לבנק בהצלחה!");
 }
+
 
 async function deleteScheduleItem(id) {
     // 1. מחיקה מהמערך המקומי

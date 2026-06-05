@@ -106,11 +106,14 @@ function startFirebaseListeners() {
         snapshot.forEach(doc => cloudSchedule.push(doc.data()));
         schedule = cloudSchedule;
         localStorage.setItem('bm_schedule', JSON.stringify(schedule));
-        if (currentTab === 'schedule') renderSchedule();
+        
+        // זה יקרה אוטומטית בכל פעם שיש שינוי בענן, 
+        // וזה יחליף את כל התצוגה בלי כפילויות
+        if (document.getElementById('content-schedule')) renderSchedule(); 
     }, error => {
         handleFirestoreError(error, "לו\"ז");
     });
-
+    
     // Menu snapshot
     const menuRef = getCollectionRef('menu');
     menuRef.onSnapshot(snapshot => {
