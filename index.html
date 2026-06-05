@@ -139,236 +139,628 @@
             </button>
         </nav>
 
-        <!-- TAB: MENU (with guest dietary requirements) -->
-        <section id="content-menu" class="space-y-6 hidden">
-            <!-- Add Menu Item Form -->
+        <!-- TAB: TASKS -->
+        <section id="content-tasks" class="space-y-6">
+            <!-- Add Task Form -->
             <div class="bg-white p-4 rounded-2xl shadow-sm border border-slate-100">
-                <h3 class="font-bold text-slate-800 mb-4 flex items-center gap-2">
-                    <span class="text-indigo-600 text-lg">➕</span> הוספת מנה חדשה לתפריט
+                <h3 class="font-bold text-slate-800 mb-2 flex items-center gap-2">
+                    <span class="text-indigo-600 text-lg">➕</span> הוספת משימה חדשה
                 </h3>
-                <div class="grid grid-cols-1 sm:grid-cols-4 gap-3 mb-4">
-                    <input type="text" id="newMenuName" placeholder="שם המנה (לדוגמה: סלמון צלוי)" class="col-span-1 sm:col-span-2 p-2.5 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none font-medium">
-                    <select id="newMenuMeal" class="p-2.5 border border-slate-200 rounded-lg text-sm bg-white focus:ring-2 focus:ring-indigo-500 focus:outline-none font-medium">
-                        <option value="ערב שבת">🍷 ערב שבת</option>
-                        <option value="בוקר שבת">⛪ בוקר שבת</option>
-                        <option value="סעודה שלישית">🥧 סעודה שלישית</option>
-                    </select>
-                    <select id="newMenuCat" class="p-2.5 border border-slate-200 rounded-lg text-sm bg-white focus:ring-2 focus:ring-indigo-500 focus:outline-none font-medium">
-                        <option value="מנה ראשונה">מנה ראשונה</option>
-                        <option value="עיקרית">עיקרית</option>
-                        <option value="תוספת">תוספת</option>
-                        <option value="קינוח">קינוח</option>
-                        <option value="ילדים">ילדים</option>
+                <div class="grid grid-cols-1 sm:grid-cols-4 gap-3">
+                    <input type="text" id="newTaskTitle" placeholder="שם המשימה (לדוגמה: לקנות סוכריות)" class="col-span-1 sm:col-span-2 p-2.5 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none font-medium font-semibold">
+                    <input type="date" id="newTaskDeadline" class="p-2.5 border border-slate-200 rounded-lg text-sm bg-white focus:ring-2 focus:ring-indigo-500 focus:outline-none font-medium font-semibold" value="2026-06-12">
+                    <select id="newTaskResponsible" class="p-2.5 border border-slate-200 rounded-lg text-sm bg-white focus:ring-2 focus:ring-indigo-500 focus:outline-none font-medium font-semibold">
+                        <option value="לא הוגדר" selected>👤 מי אחראי? (לא הוגדר)</option>
+                        <option value="נצר">נצר 🧔</option>
+                        <option value="נעמה">נעמה 👩</option>
+                        <option value="משותף">משותף 👥</option>
                     </select>
                 </div>
-                <div class="flex flex-wrap items-center gap-3 mb-4">
-                    <label class="flex items-center gap-2">
-                        <input type="checkbox" id="tagVegan" class="w-4 h-4 rounded border-slate-300">
-                        <span class="text-sm font-medium text-slate-700">🌱 טבעוני</span>
-                    </label>
-                    <label class="flex items-center gap-2">
-                        <input type="checkbox" id="tagGluten" class="w-4 h-4 rounded border-slate-300">
-                        <span class="text-sm font-medium text-slate-700">🚫 ללא גלוטן</span>
-                    </label>
-                </div>
-                <div class="flex justify-end">
-                    <button onclick="addNewMenuItem()" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-6 rounded-lg text-sm transition shadow">
-                        הוסף למנות
+                <div class="flex justify-end mt-3">
+                    <button onclick="addNewTask()" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-6 rounded-lg text-sm transition shadow">
+                        הוסף לרשימה
                     </button>
                 </div>
             </div>
 
-            <!-- Filter Menu Items -->
-            <div class="bg-white p-4 rounded-2xl shadow-sm border border-slate-100">
-                <div class="flex flex-wrap items-center gap-2">
-                    <span class="text-xs font-bold text-slate-500">🔍 סנן תפריט:</span>
-                    <button onclick="filterMenu('הכל')" class="px-3 py-1 rounded-xl text-xs font-bold border bg-indigo-600 border-indigo-600 text-white shadow-sm">הכל</button>
-                    <button onclick="filterMenu('טבעוני')" class="px-3 py-1 rounded-xl text-xs font-bold border bg-slate-100 border-slate-200 text-slate-600 hover:bg-slate-200">🌱 טבעוני</button>
-                    <button onclick="filterMenu('ללא גלוטן')" class="px-3 py-1 rounded-xl text-xs font-bold border bg-slate-100 border-slate-200 text-slate-600 hover:bg-slate-200">🚫 ללא גלוטן</button>
-                    <button onclick="filterMenu('מנת ילדים')" class="px-3 py-1 rounded-xl text-xs font-bold border bg-slate-100 border-slate-200 text-slate-600 hover:bg-slate-200">👶 ילדים</button>
-                </div>
-            </div>
-
-            <!-- Menu Items Display -->
-            <div id="menuContainer" class="bg-white p-4 rounded-2xl shadow-sm border border-slate-100 space-y-3">
-                <p class="text-center text-slate-400 text-sm">אין עדיין מנות בתפריט. הוסיפו מנות חדשות למעלה!</p>
-            </div>
-
-            <!-- DIVIDER -->
-            <hr class="border-t-2 border-slate-200 my-8">
-
-            <!-- GUEST DIETARY REQUIREMENTS SECTION -->
-            <div class="space-y-4">
-                <h2 class="text-xl font-bold text-slate-800 flex items-center gap-2">
-                    <span>🥗</span> דרישות דיאטה של אורחים
-                </h2>
-
-                <!-- Add Guest with Dietary Requirements -->
-                <div class="bg-white p-4 rounded-2xl shadow-sm border border-slate-100">
-                    <h3 class="font-bold text-slate-800 mb-4 flex items-center gap-2">
-                        <span class="text-purple-600 text-lg">➕</span> הוספת אורח עם דרישות דיאטה
-                    </h3>
-                    <div class="space-y-4">
-                        <!-- Guest Name -->
-                        <input type="text" id="newGuestDietName" placeholder="שם האורח" class="w-full p-2.5 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-purple-500 focus:outline-none font-medium">
-
-                        <!-- Dietary Restrictions Checkboxes -->
-                        <div class="bg-purple-50 p-4 rounded-xl border border-purple-100">
-                            <span class="text-sm font-bold text-slate-700 block mb-3">בחר הגבלות דיאטה:</span>
-                            <div class="flex flex-wrap gap-4">
-                                <label class="flex items-center gap-2">
-                                    <input type="checkbox" id="dietRestrictionVegetarian" class="w-4 h-4 rounded border-purple-300 text-purple-600">
-                                    <span class="text-sm font-medium text-slate-700">🥬 צמחוני</span>
-                                </label>
-                                <label class="flex items-center gap-2">
-                                    <input type="checkbox" id="dietRestrictionVegan" class="w-4 h-4 rounded border-purple-300 text-purple-600">
-                                    <span class="text-sm font-medium text-slate-700">🌱 טבעוני</span>
-                                </label>
-                                <label class="flex items-center gap-2">
-                                    <input type="checkbox" id="dietRestrictionGlutenFree" class="w-4 h-4 rounded border-purple-300 text-purple-600">
-                                    <span class="text-sm font-medium text-slate-700">🚫 ללא גלוטן</span>
-                                </label>
-                            </div>
+            <!-- 🔍 Filter and View Settings -->
+            <div class="bg-white p-4 rounded-2xl shadow-sm border border-slate-100 space-y-4">
+                <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
+                    <div class="flex flex-wrap items-center gap-2">
+                        <span class="text-xs font-bold text-slate-500">🔍 סינון לפי אחראי:</span>
+                        <div class="flex gap-1" id="responsibleFilterContainer">
+                            <button onclick="setResponsibleFilter('all')" id="filter-all" class="px-3 py-1 rounded-xl text-xs font-bold border transition bg-indigo-600 border-indigo-600 text-white shadow-sm">הכול</button>
+                            <button onclick="setResponsibleFilter('נצר')" id="filter-נצר" class="px-3 py-1 rounded-xl text-xs font-bold border transition bg-slate-100 border-slate-200 text-slate-600 hover:bg-slate-200">נצר 🧔</button>
+                            <button onclick="setResponsibleFilter('נעמה')" id="filter-נעמה" class="px-3 py-1 rounded-xl text-xs font-bold border transition bg-slate-100 border-slate-200 text-slate-600 hover:bg-slate-200">נעמה 👩</button>
+                            <button onclick="setResponsibleFilter('משותף')" id="filter-משותף" class="px-3 py-1 rounded-xl text-xs font-bold border transition bg-slate-100 border-slate-200 text-slate-600 hover:bg-slate-200">משותף 👥</button>
                         </div>
-
-                        <!-- Meal Selection -->
-                        <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                            <div>
-                                <label class="block text-xs font-bold text-slate-600 mb-2">🍷 ערב שבת</label>
-                                <select id="newGuestDietFriday" class="w-full p-2 border border-slate-200 rounded-lg text-xs bg-white focus:ring-1 focus:ring-purple-500 focus:outline-none">
-                                    <option value="">בחר מנה...</option>
-                                </select>
-                            </div>
-                            <div>
-                                <label class="block text-xs font-bold text-slate-600 mb-2">⛪ בוקר שבת</label>
-                                <select id="newGuestDietSaturday" class="w-full p-2 border border-slate-200 rounded-lg text-xs bg-white focus:ring-1 focus:ring-purple-500 focus:outline-none">
-                                    <option value="">בחר מנה...</option>
-                                </select>
-                            </div>
-                            <div>
-                                <label class="block text-xs font-bold text-slate-600 mb-2">🥧 סעודה שלישית</label>
-                                <select id="newGuestDietThird" class="w-full p-2 border border-slate-200 rounded-lg text-xs bg-white focus:ring-1 focus:ring-purple-500 focus:outline-none">
-                                    <option value="">בחר מנה...</option>
-                                </select>
-                            </div>
-                        </div>
-
-                        <!-- Add Button -->
-                        <div class="flex justify-end">
-                            <button onclick="addNewGuestDiet()" class="bg-purple-600 hover:bg-purple-700 text-white font-bold py-2 px-6 rounded-lg text-sm transition shadow">
-                                הוסף אורח עם דיאטה
-                            </button>
-                        </div>
+                    </div>
+                    <div class="flex flex-wrap items-center gap-2">
+                        <span class="text-xs font-bold text-slate-500">✅ סנן סטטוס:</span>
+                        <select id="taskStatusFilter" onchange="renderTasks()" class="p-1.5 border border-slate-200 rounded-lg text-xs font-medium">
+                            <option value="active" selected>⏳ משימות לביצוע בלבד</option>
+                            <option value="completed">✅ משימות שהושלמו בלבד</option>
+                            <option value="all">📁 הצג את כל המשימות</option>
+                        </select>
                     </div>
                 </div>
 
-                <!-- Guest Diets Display -->
-                <div id="guestDietsContainer" class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <div class="col-span-full p-8 text-center text-slate-400 text-sm bg-white rounded-2xl border border-slate-100">
-                        אין עדיין אורחים עם דרישות דיאטה שלא סטנדרטיות. הוסיפו אורח חדש למעלה!
+                <div class="flex flex-wrap justify-between items-center gap-2 pt-3 border-t border-slate-100">
+                    <div class="flex items-center gap-2">
+                        <span class="text-xs font-bold text-slate-500">📊 סוג תצוגה:</span>
+                        <button id="btnViewDynamic" onclick="setTaskViewMode('dynamic')" class="px-3 py-1 rounded-xl text-xs font-bold border bg-indigo-600 border-indigo-600 text-white shadow-sm transition">📅 קטגוריות יחסיות</button>
+                        <button id="btnViewSorted" onclick="setTaskViewMode('sorted')" class="px-3 py-1 rounded-xl text-xs font-bold border bg-slate-100 border-slate-200 text-slate-600 hover:bg-slate-200 transition">📋 רשימה אחת ממוינת</button>
                     </div>
+
+                    <!-- WhatsApp Notification Trigger -->
+                    <button onclick="generateWhatsAppNotification()" class="bg-emerald-600 hover:bg-emerald-700 text-white px-3.5 py-1.5 rounded-xl text-xs font-bold transition flex items-center gap-1.5 shadow">
+                        <span>📲</span> סיכום משימות למחר בוואטסאפ
+                    </button>
+                </div>
+            </div>
+
+            <!-- WhatsApp Actions modal -->
+            <div id="waModal" class="hidden bg-emerald-50 border border-emerald-200 p-4 rounded-2xl flex flex-col gap-3">
+                <div class="flex justify-between items-center">
+                    <span class="text-sm font-bold text-emerald-950 flex items-center gap-1.5">
+                        <span>💬</span> הודעת סיכום משימות מוכנה לשליחה!
+                    </span>
+                    <button onclick="closeWaModal()" class="text-xs font-extrabold text-emerald-800 hover:text-black">סגור X</button>
+                </div>
+                <p class="text-xs text-emerald-800">הכנו הודעה המפרטת את כל המשימות הפתוחות של מחר, כולל משימות שחרגו מהזמן. שלחו אותה ישירות לוואטסאפ שלכם:</p>
+                <div class="flex flex-wrap gap-2 pt-1">
+                    <button onclick="sendWa('972524773764')" class="bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-2 px-4 rounded-xl text-xs transition flex items-center gap-1.5">
+                        🧔 שלח לוואטסאפ של נצר
+                    </button>
+                    <button onclick="sendWa('972545401275')" class="bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-2 px-4 rounded-xl text-xs transition flex items-center gap-1.5">
+                        👩 שלח לוואטסאפ של נעמה
+                    </button>
+                </div>
+                <textarea id="waMessageText" readonly rows="5" class="w-full p-2.5 text-xs font-mono rounded-lg border border-emerald-200 bg-white focus:outline-none"></textarea>
+            </div>
+
+            <!-- Task Containers for DYNAMIC mode -->
+            <div id="dynamicTasksLayout" class="space-y-4">
+                <!-- CATEGORY 1: OVERDUE -->
+                <div id="box-overdue" class="bg-white rounded-2xl shadow-sm border border-red-100 overflow-hidden">
+                    <div class="bg-red-50 px-5 py-4 border-b border-red-100 flex justify-between items-center">
+                        <h2 class="font-extrabold text-red-800 flex items-center gap-2 text-base">
+                            <span>🔴</span> משימות שעבר זמנן (איחור)
+                        </h2>
+                        <span id="badge-overdue" class="bg-red-200 text-red-800 text-xs font-bold px-2.5 py-1 rounded-full">0 משימות</span>
+                    </div>
+                    <div class="divide-y divide-slate-100" id="tasks-overdue"></div>
+                </div>
+
+                <!-- CATEGORY 2: TODAY/TOMORROW -->
+                <div id="box-today" class="bg-white rounded-2xl shadow-sm border border-amber-100 overflow-hidden">
+                    <div class="bg-amber-50 px-5 py-4 border-b border-amber-100 flex justify-between items-center">
+                        <h2 class="font-extrabold text-amber-800 flex items-center gap-2 text-base">
+                            <span>🟠</span> היום ומחר (סופר-דחוף)
+                        </h2>
+                        <span id="badge-today" class="bg-amber-200 text-amber-800 text-xs font-bold px-2.5 py-1 rounded-full">0 משימות</span>
+                    </div>
+                    <div class="divide-y divide-slate-100" id="tasks-today"></div>
+                </div>
+
+                <!-- CATEGORY 3: THIS WEEK -->
+                <div id="box-thisweek" class="bg-white rounded-2xl shadow-sm border border-blue-100 overflow-hidden">
+                    <div class="bg-blue-50 px-5 py-4 border-b border-blue-100 flex justify-between items-center">
+                        <h2 class="font-extrabold text-blue-800 flex items-center gap-2 text-base">
+                            <span>🔵</span> במהלך השבוע הקרוב (עד 7 ימים)
+                        </h2>
+                        <span id="badge-thisweek" class="bg-blue-200 text-blue-800 text-xs font-bold px-2.5 py-1 rounded-full">0 משימות</span>
+                    </div>
+                    <div class="divide-y divide-slate-100" id="tasks-thisweek"></div>
+                </div>
+
+                <!-- CATEGORY 4: FUTURE -->
+                <div id="box-future" class="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
+                    <div class="bg-slate-50 px-5 py-4 border-b border-slate-100 flex justify-between items-center">
+                        <h2 class="font-extrabold text-slate-800 flex items-center gap-2 text-base">
+                            <span>⚪</span> בהמשך (עוד שבועיים ומעלה)
+                        </h2>
+                        <span id="badge-future" class="bg-slate-200 text-slate-800 text-xs font-bold px-2.5 py-1 rounded-full">0 משימות</span>
+                    </div>
+                    <div class="divide-y divide-slate-100" id="tasks-future"></div>
+                </div>
+            </div>
+
+            <!-- Task Container for SORTED LIST mode -->
+            <div id="sortedTasksLayout" class="hidden bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
+                <div class="bg-indigo-50 px-5 py-4 border-b border-indigo-100 flex justify-between items-center">
+                    <h2 class="font-extrabold text-indigo-900 flex items-center gap-2 text-base">
+                        <span>📋</span> כל המשימות מסודרות לפי תאריך יעד
+                    </h2>
+                    <span id="badge-sorted" class="bg-indigo-200 text-indigo-800 text-xs font-bold px-2.5 py-1 rounded-full">0 משימות</span>
+                </div>
+                <div class="divide-y divide-slate-100" id="tasks-sorted-container"></div>
+            </div>
+        </section>
+
+        <!-- TAB: RSVP (אישורי הגעה לשבת) -->
+        <section id="content-rsvp" class="hidden space-y-6">
+            <!-- Add Guest RSVP Form -->
+            <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-100">
+                <h3 class="font-bold text-slate-800 mb-3 flex items-center gap-2">
+                    <span class="text-teal-600 text-lg">➕</span> רישום אורח / משפחה לשבת
+                </h3>
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+                    <div>
+                        <label class="block text-xs font-bold text-slate-600 mb-1">שם ושם משפחה</label>
+                        <input type="text" id="rsvpName" placeholder="לדוגמה: משפחת כהן" class="w-full p-2.5 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-teal-500 font-medium">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-slate-600 mb-1">מבוגרים (מעל גיל 12)</label>
+                        <input type="number" id="rsvpAdults" value="2" min="0" class="w-full p-2.5 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-teal-500 font-semibold text-center">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-slate-600 mb-1">ילדים (עד גיל 12)</label>
+                        <input type="number" id="rsvpKids" value="0" min="0" class="w-full p-2.5 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-teal-500 font-semibold text-center">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-slate-600 mb-1">נשארים לישון בשבת?</label>
+                        <select id="rsvpSleep" class="w-full p-2.5 border border-slate-200 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-teal-500 font-medium">
+                            <option value="no">❌ לא, חוזרים הביתה</option>
+                            <option value="yes">🏡 כן, נשארים לישון</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="mt-4 p-3 bg-slate-50 rounded-xl">
+                    <span class="block text-xs font-bold text-slate-600 mb-2">🍽️ באילו ארוחות משתתפים?</span>
+                    <div class="flex flex-wrap gap-4">
+                        <label class="flex items-center gap-1.5 cursor-pointer text-xs font-semibold text-slate-700 select-none">
+                            <input type="checkbox" id="rsvpMealFriday" checked class="w-4 h-4 rounded text-teal-600 border-slate-300 focus:ring-teal-500">
+                            <span>ערב שבת 🍷</span>
+                        </label>
+                        <label class="flex items-center gap-1.5 cursor-pointer text-xs font-semibold text-slate-700 select-none">
+                            <input type="checkbox" id="rsvpMealSaturday" checked class="w-4 h-4 rounded text-teal-600 border-slate-300 focus:ring-teal-500">
+                            <span>בוקר שבת וקידוש ⛪</span>
+                        </label>
+                        <label class="flex items-center gap-1.5 cursor-pointer text-xs font-semibold text-slate-700 select-none">
+                            <input type="checkbox" id="rsvpMealThird" checked class="w-4 h-4 rounded text-teal-600 border-slate-300 focus:ring-teal-500">
+                            <span>סעודה שלישית 🥧</span>
+                        </label>
+                        <button onclick="toggleAllMeals(true)" class="text-[10px] text-teal-600 hover:underline mr-auto">בחר הכל</button>
+                        <button onclick="toggleAllMeals(false)" class="text-[10px] text-slate-500 hover:underline">נקה הכל</button>
+                    </div>
+                </div>
+
+                <div class="flex justify-end mt-4">
+                    <button onclick="addNewRsvp()" class="bg-teal-600 hover:bg-teal-700 text-white font-bold py-2.5 px-6 rounded-lg text-sm transition shadow">
+                        רשם אורח לשבת
+                    </button>
+                </div>
+            </div>
+
+            <!-- RSVP Summary Cards -->
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+                <div class="bg-white p-4 rounded-xl border border-slate-100 shadow-sm text-center">
+                    <span id="rsvpTotalCount" class="block text-2xl font-extrabold text-teal-700">0</span>
+                    <span class="text-xs text-slate-500 font-bold">סה"כ אורחים מאושרים</span>
+                    <span id="rsvpSubtotals" class="block text-[10px] text-slate-400 mt-1">0 מבוגרים | 0 ילדים</span>
+                </div>
+                <div class="bg-white p-4 rounded-xl border border-slate-100 shadow-sm text-center">
+                    <span id="rsvpCountFriday" class="block text-xl font-extrabold text-indigo-700">0</span>
+                    <span class="text-xs text-slate-500 font-bold">🍷 אורחים בערב שבת</span>
+                    <span id="subFriday" class="block text-[10px] text-slate-400 mt-1">0 מבוגרים | 0 ילדים</span>
+                </div>
+                <div class="bg-white p-4 rounded-xl border border-slate-100 shadow-sm text-center">
+                    <span id="rsvpCountSaturday" class="block text-xl font-extrabold text-amber-700">0</span>
+                    <span class="text-xs text-slate-500 font-bold">⛪ בבוקר שבת וקידוש</span>
+                    <span id="subSaturday" class="block text-[10px] text-slate-400 mt-1">0 מבוגרים | 0 ילדים</span>
+                </div>
+                <div class="bg-white p-4 rounded-xl border border-slate-100 shadow-sm text-center">
+                    <span id="rsvpCountThird" class="block text-xl font-extrabold text-emerald-700">0</span>
+                    <span class="text-xs text-slate-500 font-bold">🥧 בסעודה שלישית</span>
+                    <span id="subThird" class="block text-[10px] text-slate-400 mt-1">0 מבוגרים | 0 ילדים</span>
+                </div>
+            </div>
+
+            <!-- RSVP List Table -->
+            <div class="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
+                <div class="overflow-x-auto">
+                    <table class="w-full text-right text-xs sm:text-sm">
+                        <thead class="bg-teal-50 text-teal-900 font-bold border-b border-teal-100">
+                            <tr>
+                                <th class="p-3">שם ושם משפחה</th>
+                                <th class="p-3 text-center">👨‍🦳 מבוגרים</th>
+                                <th class="p-3 text-center">👶 ילדים</th>
+                                <th class="p-3 text-center">🏡 לנים בשבת</th>
+                                <th class="p-3 text-center">🍽️ ארוחות מתוכננות</th>
+                                <th class="p-3 text-center">פעולות</th>
+                            </tr>
+                        </thead>
+                        <tbody id="rsvpTableBody" class="divide-y divide-slate-100">
+                            <!-- Injected by JavaScript -->
+                        </tbody>
+                    </table>
                 </div>
             </div>
         </section>
 
-        <!-- TAB: SCHEDULE -->
-        <section id="content-schedule" class="space-y-6 hidden">
-            <!-- Add Schedule Item Form -->
-            <div class="bg-white p-4 rounded-2xl shadow-sm border border-slate-100">
-                <h3 class="font-bold text-slate-800 mb-3 flex items-center gap-2">
-                    <span class="text-amber-600 text-lg">➕</span> הוספת פעילות ללו"ז
+        <!-- TAB: SHOPPING & CALCULATOR -->
+        <section id="content-shopping" class="hidden space-y-6">
+            <!-- 🥤 Drink Calculator Card -->
+            <div class="bg-gradient-to-br from-indigo-50 to-blue-50 p-5 rounded-2xl border border-indigo-100 shadow-sm">
+                <h3 class="font-extrabold text-indigo-950 mb-1 flex items-center gap-2">
+                    <span>🥤</span> מחשבון כמויות שתייה קלה וחריפה לשבת
                 </h3>
-                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-3">
-                    <input type="text" id="schTitle" placeholder="שם הפעילות" class="p-2.5 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-amber-500 focus:outline-none font-medium">
-                    <select id="schDay" class="p-2.5 border border-slate-200 rounded-lg text-sm bg-white focus:ring-2 focus:ring-amber-500 focus:outline-none font-medium">
-                        <option value="שישי">שישי</option>
-                        <option value="שבת">שבת</option>
+                <p class="text-xs text-indigo-800 mb-4">המחשבון מוזן אוטומטית מכמות האורחים שאושרו בלשונית **אישורי הגעה** ומחשב כמויות לשבת שלמה (3 ארוחות באולם + וילה):</p>
+                
+                <div class="grid grid-cols-3 gap-3 mb-4">
+                    <div>
+                        <label class="block text-[11px] font-bold text-indigo-900 mb-1">👨‍🦳 מבוגרים (מאושרים)</label>
+                        <input type="number" id="calcAdults" readonly class="w-full p-2 border border-indigo-200 bg-indigo-50/50 rounded-lg text-sm font-semibold text-center text-indigo-950 focus:outline-none">
+                    </div>
+                    <div>
+                        <label class="block text-[11px] font-bold text-indigo-900 mb-1">👶 ילדים (מאושרים)</label>
+                        <input type="number" id="calcKids" readonly class="w-full p-2 border border-indigo-200 bg-indigo-50/50 rounded-lg text-sm font-semibold text-center text-indigo-950 focus:outline-none">
+                    </div>
+                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-4">
+                        <div>
+                            <label class="block text-[11px] font-bold text-indigo-900 mb-1">🍷 ערב שבת (אורחים)</label>
+                            <input type="number" id="guestsFriday" oninput="calculateDrinks()" class="w-full p-2 border border-indigo-200 rounded-lg text-sm font-semibold text-center">
+                        </div>
+                        <div>
+                            <label class="block text-[11px] font-bold text-indigo-900 mb-1">⛪ בוקר שבת (אורחים)</label>
+                            <input type="number" id="guestsSaturday" oninput="calculateDrinks()" class="w-full p-2 border border-indigo-200 rounded-lg text-sm font-semibold text-center">
+                        </div>
+                        <div>
+                            <label class="block text-[11px] font-bold text-indigo-900 mb-1">🥧 סעודה שלישית (אורחים)</label>
+                            <input type="number" id="guestsThird" oninput="calculateDrinks()" class="w-full p-2 border border-indigo-200 rounded-lg text-sm font-semibold text-center">
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="bg-white/75 backdrop-blur-sm p-4 rounded-xl space-y-2.5 text-xs border border-indigo-100/50 mb-4 font-semibold text-slate-800">
+                    <div class="flex justify-between border-b border-indigo-50 pb-2">
+                        <span class="font-medium">💧 מים מינרליים:</span>
+                        <span class="text-indigo-900" id="resWater">0 בקבוקים</span>
+                    </div>
+                    <div class="flex justify-between border-b border-indigo-50 pb-2">
+                        <span class="font-medium text-emerald-900">🥤 שתייה מתוקה מחושבת (לפי 0.75 ליטר לאדם):</span>
+                        <span class="text-emerald-800" id="resSweetDrinks">0 בקבוקים</span>
+                    </div>
+                </div>
+                
+                <button onclick="addCalculatedDrinksToShopping()" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 px-4 rounded-xl text-xs transition shadow-md flex items-center justify-center gap-2">
+                    <span>🛒</span> הוסף כמויות אלו ישירות לרשימת הקניות שלכם
+                </button>
+            </div>
+
+            <!-- Add Shopping Item Form -->
+            <div class="bg-white p-4 rounded-2xl shadow-sm border border-slate-100">
+                <h3 class="font-bold text-slate-800 mb-2 flex items-center gap-2">
+                    <span class="text-emerald-600 text-lg">➕</span> הוספת מוצר ידנית לקנייה
+                </h3>
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                    <input type="text" id="newShopTitle" placeholder="שם המוצר (לדוגמה: 20 חבילות סוכריות ג'לי)" class="col-span-1 sm:col-span-2 p-2.5 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-emerald-500 focus:outline-none font-semibold">
+                    <select id="newShopCategory" class="p-2.5 border border-slate-200 rounded-lg text-sm bg-white focus:ring-2 focus:ring-emerald-500 focus:outline-none font-semibold">
+                        <option value="disposable">🍽️ כלים חד פעמיים</option>
+                        <option value="drinks">🥤 שתייה וקפה</option>
+                        <option value="synagogue">⛪ בית הכנסת</option>
+                        <option value="dessert">🍰 קינוחים ואוכל משלים</option>
+                        <option value="villa">🏡 אירוח בוילה</option>
                     </select>
-                    <select id="schTime" class="p-2.5 border border-slate-200 rounded-lg text-sm bg-white focus:ring-2 focus:ring-amber-500 focus:outline-none font-medium"></select>
-                    <input type="text" id="schSpeaker" placeholder="מי מנהל? (לדוגמה: הרב כהן)" class="p-2.5 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-amber-500 focus:outline-none font-medium">
                 </div>
-                <div class="flex items-center gap-2 mb-3">
-                    <input type="checkbox" id="schOverlap" class="w-4 h-4 rounded border-slate-300">
-                    <label for="schOverlap" class="text-sm font-medium text-slate-700">⏱️ עלול להתנגש עם פעילויות אחרות</label>
-                </div>
-                <div class="flex justify-end">
-                    <button onclick="addNewScheduleItem()" class="bg-amber-600 hover:bg-amber-700 text-white font-bold py-2 px-6 rounded-lg text-sm transition shadow">
-                        הוסף ללו"ז
+                <div class="flex justify-end mt-3">
+                    <button onclick="addNewShopItem()" class="bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-2 px-6 rounded-lg text-sm transition shadow">
+                        הוסף לסל
                     </button>
                 </div>
             </div>
 
-            <!-- Schedule Display -->
-            <div id="scheduleContainer" class="bg-white p-4 rounded-2xl shadow-sm border border-slate-100 space-y-3">
-                <p class="text-center text-slate-400 text-sm">אין עדיין פעילויות בלו"ז</p>
+            <!-- Shopping List Render -->
+            <div class="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
+                <div class="bg-slate-50 px-5 py-4 border-b border-slate-100">
+                    <h2 class="font-extrabold text-slate-700 flex items-center gap-2">
+                        <span>🛒</span> רשימת קניות מרוכזת (סמנו וי בסופר!)
+                    </h2>
+                </div>
+                <div class="divide-y divide-slate-100" id="shoppingListContainer"></div>
             </div>
+        </section>
+
+        <!-- TAB: VILLA ROOM ASSIGNMENT (חדרים בוילה) -->
+        <section id="content-rooms" class="hidden space-y-6">
+            <div class="bg-purple-50 border border-purple-100 rounded-2xl p-4 flex items-start gap-3">
+                <span class="text-xl">🏨</span>
+                <p class="text-sm text-purple-950 font-medium">
+                    כאן תוכלו לנהל את חלוקת החדרים בוילה המשותפת. רשמו אילו חדרים קיימים, הגדירו את קיבולת המיטות ושבצו את האורחים כדי שלכולם יהיה מקום מושלם לישון בשבת!
+                </p>
+            </div>
+
+            <!-- Add Room Form -->
+            <div class="bg-white p-4 rounded-2xl shadow-sm border border-slate-100">
+                <h3 class="font-bold text-slate-800 mb-2 flex items-center gap-2">
+                    <span class="text-purple-600 text-lg">➕</span> הוספת חדר חדש בוילה
+                </h3>
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                    <input type="text" id="newRoomName" placeholder="שם החדר (לדוגמה: סוויטה ראשית, גלריה למעלה)" class="col-span-1 sm:col-span-2 p-2.5 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-purple-500 focus:outline-none font-medium">
+                    <input type="number" id="newRoomCapacity" placeholder="כמות מיטות/מזרנים" class="p-2.5 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-purple-500 focus:outline-none font-medium">
+                </div>
+                <div class="flex justify-end mt-3">
+                    <button onclick="addNewRoom()" class="bg-purple-600 hover:bg-purple-700 text-white font-bold py-2 px-6 rounded-lg text-sm transition shadow">
+                        צור חדר בוילה
+                    </button>
+                </div>
+            </div>
+
+            <!-- Rooms Grid List -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4" id="roomsContainer"></div>
+        </section>
+
+        <!-- TAB: BUDGET MANAGEMENT (ניהול תקציב לשבת) -->
+        <section id="content-budget" class="hidden space-y-6">
+            <!-- Budget Hero Progress -->
+            <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-100">
+                <h3 class="font-bold text-slate-800 mb-1 flex items-center gap-2">
+                    <span>💰</span> מעקב תקציב השבת שלכם
+                </h3>
+                <p class="text-xs text-slate-400 mb-4">יעד התקציב הכללי שלכם מוגדר על סך **33,000 ש"ח**.</p>
+                
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-4 text-center">
+                    <div class="bg-slate-50 p-3 rounded-xl border border-slate-100">
+                        <span class="block text-xs font-bold text-slate-500">יעד תקציב</span>
+                        <span class="text-lg font-bold text-slate-800">33,000 ₪</span>
+                    </div>
+                    <div class="bg-rose-50 p-3 rounded-xl border border-rose-100">
+                        <span class="block text-xs font-bold text-rose-500">סה"כ הוצאות</span>
+                        <span id="budgetTotalExpenses" class="text-lg font-bold text-rose-700">0 ₪</span>
+                    </div>
+                    <div class="bg-emerald-50 p-3 rounded-xl border border-emerald-100">
+                        <span class="block text-xs font-bold text-emerald-500">שולם בפועל</span>
+                        <span id="budgetTotalPaid" class="text-lg font-bold text-emerald-700">0 ₪</span>
+                    </div>
+                </div>
+
+                <!-- Progress Bar -->
+                <div class="space-y-1">
+                    <div class="flex justify-between text-xs font-bold">
+                        <span id="budgetProgressPercent" class="text-indigo-600">0% מנוצל</span>
+                        <span id="budgetRemainingAmount" class="text-slate-500">נותר: 33,000 ₪</span>
+                    </div>
+                    <div class="w-full bg-slate-100 h-3 rounded-full overflow-hidden">
+                        <div id="budgetProgressBar" class="bg-indigo-600 h-full transition-all duration-300" style="width: 0%"></div>
+                    </div>
+                </div>
+
+                <!-- Budget Warning Badge -->
+                <div id="budgetWarningBadge" class="hidden mt-4 p-3 bg-red-100 text-red-800 rounded-xl text-xs font-bold text-center border border-red-200">
+                    ⚠️ שימו לב: חרגתם מיעד התקציב של 33,000 ש"ח!
+                </div>
+            </div>
+
+            <!-- Add Expense Form -->
+            <div class="bg-white p-4 rounded-2xl shadow-sm border border-slate-100">
+                <h3 class="font-bold text-slate-800 mb-3 flex items-center gap-2">
+                    <span class="text-rose-600 text-lg">➕</span> הוספת הוצאה חדשה
+                </h3>
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                    <input type="text" id="newExpName" placeholder="שם ההוצאה (למשל: קייטרינג)" class="p-2.5 border rounded-lg text-sm">
+                    <input type="number" id="newExpPricePerUnit" placeholder="מחיר ליחידה / למנה" class="p-2.5 border rounded-lg text-sm">
+                    <input type="number" id="newExpQty" placeholder="כמות (ברירת מחדל 1)" class="p-2.5 border rounded-lg text-sm">
+                    <input type="number" id="newExpPaid" placeholder="סכום ששולם עכשיו" class="p-2.5 border rounded-lg text-sm">
+                    <input type="text" id="newExpMethod" placeholder="איך שולם? (מזומן/העברה)" class="p-2.5 border rounded-lg text-sm">
+                    <input type="date" id="newExpDate" class="p-2.5 border rounded-lg text-sm">
+                </div>
+                <div class="flex justify-end mt-3">
+                    <button onclick="addNewExpense()" class="bg-rose-600 hover:bg-rose-700 text-white font-bold py-2 px-6 rounded-lg text-sm transition shadow">
+                        הוסף לתקציב
+                    </button>
+                </div>
+            </div>
+
+            <!-- Expenses List Table -->
+            <div class="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
+                <div class="bg-slate-50 px-5 py-4 border-b border-slate-100">
+                    <h2 class="font-extrabold text-slate-700 flex items-center gap-2">
+                        <span>💰</span> רשימת הוצאות (אינו מוגבל לקטגוריות)
+                    </h2>
+                </div>
+                <div class="divide-y divide-slate-100" id="budgetListContainer"></div>
+            </div>
+        </section>
+
+        <section id="content-logistics" class="hidden space-y-6">
+            <div class="bg-white p-4 rounded-2xl shadow-sm border border-slate-100">
+                <h3 class="font-bold text-slate-800 mb-3 flex items-center gap-2"><span>➕</span> הוספת ערכת ציוד</h3>
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <input type="text" id="newLogName" placeholder="שם הערכה" class="p-2.5 border rounded-lg text-sm">
+                    <select id="newLogDest" class="p-2.5 border rounded-lg text-sm">
+                        <option value="אולם">אולם</option>
+                        <option value="וילה">וילה</option>
+                        <option value="בית כנסת">בית כנסת</option>
+                        <option value="בית של כהן">בית של כהן</option>
+                        <option value="בית של שרביט">בית של שרביט</option>
+                    </select>
+                </div>
+                <button onclick="addNewLogisticsKit()" class="mt-3 bg-blue-600 text-white font-bold py-2 px-6 rounded-lg text-sm">צור ערכה</button>
+            </div>
+
+            <div class="flex gap-2 mb-4">
+                <button onclick="filterLogistics('all')" class="bg-slate-200 px-3 py-1 rounded-full text-xs">הכל</button>
+                <button onclick="filterLogistics('וילה')" class="bg-slate-200 px-3 py-1 rounded-full text-xs">וילה</button>
+                <button onclick="filterLogistics('אולם')" class="bg-slate-200 px-3 py-1 rounded-full text-xs">אולם</button>
+            </div>
+            <div id="logisticsContainer" class="grid grid-cols-1 md:grid-cols-2 gap-4"></div>
+            <button id="btnSummary" onclick="generateLogisticsSummary()" class="mt-6 w-full bg-slate-800 text-white font-bold py-3 rounded-xl shadow-lg">
+                📜 הפק רשימת סיכום (איזה ציוד נמצא איפה)
+            </button>
+        </section>
+
+        <!-- TAB: CALLS -->
+        <section id="content-calls" class="hidden space-y-6">
+            <div class="bg-indigo-50 border border-indigo-100 rounded-2xl p-4 flex items-start gap-3">
+                <span class="text-xl">💡</span>
+                <p class="text-sm text-indigo-900 font-medium">
+                    כאן תוכלו לרכז את כל התיאומים והטלפונים החשובים. כתבו סיכומי שיחות והערות והם יישמרו ויסתנכרנו אוטומטית אצל שניכם!
+                </p>
+            </div>
+
+            <!-- Calls Grid -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4" id="callsContainer"></div>
+        </section>
+
+        <!-- TAB: RECENT (משימות אחרונות) -->
+        <section id="content-recent" class="hidden space-y-6">
+            <div class="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
+                <div class="bg-slate-50 px-5 py-4 border-b border-slate-100">
+                    <h2 class="font-extrabold text-slate-700 flex items-center gap-2 text-base">
+                        <span>⏱️</span> משימות חדשות שנוספו לאחרונה (מכל הקטגוריות)
+                    </h2>
+                </div>
+                <div class="divide-y divide-slate-100" id="recentTasksContainer"></div>
+            </div>
+        </section>
+
+        <section id="content-menu" class="hidden space-y-6">
+            <div class="bg-white p-4 rounded-2xl shadow-sm border border-slate-100">
+                <h3 class="font-bold text-slate-800 mb-3 flex items-center gap-2"><span>➕</span> הוספת מנה</h3>
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <input type="text" id="newMenuName" placeholder="שם המנה (לדוגמה: סלמון)" class="p-2.5 border rounded-lg text-sm">
+                    <select id="newMenuMeal" class="p-2.5 border rounded-lg text-sm">
+                        <option value="ערב שבת">ערב שבת</option>
+                        <option value="בוקר שבת">בוקר שבת</option>
+                        <option value="סעודה שלישית">סעודה שלישית</option>
+                    </select>
+                    <select id="newMenuCat" class="p-2.5 border rounded-lg text-sm">
+                        <option value="מנה ראשונה">מנה ראשונה</option>
+                        <option value="עיקרית">מנה עיקרית</option>
+                        <option value="תוספת">תוספת</option>
+                        <option value="קינוח">קינוח</option>
+                        <option value="ילדים">מנת ילדים</option>
+                        <option value="אחר">אחר</option>
+                    </select>
+                    <div class="flex flex-wrap gap-2 items-center text-xs">
+                        <label><input type="checkbox" id="tagVegan"> טבעוני 🥬</label>
+                        <label><input type="checkbox" id="tagGluten"> ללא גלוטן 🚫</label>
+                    </div>
+                </div>
+                <button onclick="addNewMenuItem()" class="mt-3 bg-indigo-600 text-white font-bold py-2 px-6 rounded-lg text-sm">הוסף לתפריט</button>
+                <div class="flex flex-wrap gap-2 my-4 bg-slate-100 p-2 rounded-xl text-xs">
+                    <button onclick="filterMenu('הכל')" class="px-3 py-1 rounded-full bg-white border shadow-sm">הכל</button>
+                    <button onclick="filterMenu('טבעוני')" class="px-3 py-1 rounded-full bg-white border shadow-sm">🥬 טבעוני</button>
+                    <button onclick="filterMenu('ללא גלוטן')" class="px-3 py-1 rounded-full bg-white border shadow-sm">🚫 ללא גלוטן</button>
+                    <button onclick="filterMenu('מנת ילדים')" class="px-3 py-1 rounded-full bg-white border shadow-sm">👶 מנת ילדים</button>
+                </div>
+            </div>
+            <div id="menuContainer" class="grid grid-cols-1 md:grid-cols-3 gap-4"></div>
+        </section>
+
+        <section id="content-schedule" class="hidden space-y-6">
+            <div class="bg-white p-4 rounded-2xl shadow-sm border border-slate-100">
+                <h3 class="font-bold text-slate-800 mb-3 flex items-center gap-2"><span>➕</span> הוספת פעילות ללו"ז</h3>
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-xs font-bold text-slate-500 mb-1">שם הפעילות:</label>
+                        <input type="text" id="schTitle" placeholder="לדוגמה: קידוש" class="p-2.5 border rounded-lg text-sm w-full">
+                    </div>
+                    
+                    <div>
+                        <label class="block text-xs font-bold text-slate-500 mb-1">יום:</label>
+                        <select id="schDay" class="p-2.5 border rounded-lg text-sm w-full">
+                            <option value="שישי">יום שישי</option>
+                            <option value="שבת">יום שבת</option>
+                        </select>
+                    </div>
+                    
+                    <div>
+                        <label class="block text-xs font-bold text-slate-500 mb-1">בחר שעה:</label>
+                        <select id="schTime" class="p-2.5 border rounded-lg text-sm w-full bg-white">
+                            <option value="">בחר שעה...</option>
+                            </select>
+                    </div>
+                    
+                    <div>
+                        <label class="block text-xs font-bold text-slate-500 mb-1">דובר (דבר תורה, ברכה...):</label>
+                        <input type="text" id="schSpeaker" placeholder="שם הדובר" class="p-2.5 border rounded-lg text-sm w-full">
+                    </div>
+                    
+                    <label class="flex items-center gap-2 text-xs font-bold sm:col-span-2 mt-1">
+                        <input type="checkbox" id="schOverlap"> פעילות חופפת (מקבילה)
+                    </label>
+                </div>
+                <button onclick="addNewScheduleItem()" class="mt-3 bg-purple-600 text-white font-bold py-2 px-6 rounded-lg text-sm">הוסף ללו"ז</button>
+            </div>
+            <div id="scheduleContainer" class="space-y-4"></div>
         </section>
 
         <!-- TAB: SETTINGS -->
-        <section id="content-settings" class="space-y-6 hidden">
-            <!-- Firebase Connection -->
-            <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 space-y-4">
-                <h2 class="text-xl font-bold text-slate-800 flex items-center gap-2">
-                    <span>🔄</span> הגדרות סנכרון ענן (Firebase)
+        <section id="content-settings" class="hidden space-y-6">
+            <div class="bg-white rounded-2xl shadow-md p-6 border border-slate-100">
+                <h2 class="text-xl font-bold text-slate-800 mb-4 flex items-center gap-2">
+                    <span>🔄</span> הגדרות חיבור וסנכרון ענן בזמן אמת
                 </h2>
-                <div class="bg-blue-50 border border-blue-200 p-4 rounded-xl text-sm text-blue-800 space-y-2">
-                    <p><strong>📌 הוראות התחברות לגוגל:</strong></p>
-                    <ol class="list-decimal list-inside space-y-1 text-xs">
-                        <li>כנסו ל-<a href="https://firebase.google.com" target="_blank" class="underline">firebase.google.com</a></li>
-                        <li>צרו פרויקט חדש (או בחרו קיים)</li>
-                        <li>עברו ל-Firestore Database ויצרו מסד נתונים</li>
-                        <li>עברו ל-Project Settings והעתיקו את ה-Web Config</li>
-                        <li>הדביקו את ה-Config להלן</li>
-                    </ol>
-                </div>
-                <textarea id="firebaseConfigInput" placeholder="הדביקו את ה-Firebase Config JSON כאן..." class="w-full p-3 border border-slate-200 rounded-lg text-xs font-mono focus:ring-2 focus:ring-indigo-500 focus:outline-none" rows="6"></textarea>
-                <input type="text" id="appIdInput" placeholder="מזהה הפרויקט (Project ID) בלבד" class="w-full p-2.5 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none font-medium">
-                <div class="flex justify-end">
-                    <button onclick="saveAndConnectFirebase()" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-6 rounded-lg text-sm transition shadow">
-                        התחבר וסנכרן
-                    </button>
+
+                <div class="space-y-4">
+                    <div>
+                        <label class="block text-sm font-bold text-slate-700 mb-1">מזהה פרויקט (App ID) שלכם:</label>
+                        <input type="text" id="appIdInput" value="bar-mitzvah-amitai" class="w-full p-2.5 border border-slate-200 rounded-lg text-sm bg-slate-50 focus:ring-2 focus:ring-indigo-500 focus:outline-none font-mono">
+                        <p class="text-xs text-slate-400 mt-1">מזהה זה נועל את המידע שלכם תחת תיקייה מבודדת בענן של גוגל.</p>
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-bold text-slate-700 mb-1">הגדרות Firebase Config (קוד הקונפיגורציה שקיבלתם מגוגל):</label>
+                        <textarea id="firebaseConfigInput" rows="8" placeholder='הדביקו כאן את הבלוק שגוגל נתנו לכם, לדוגמה:
+
+const firebaseConfig = {
+  apiKey: "AIzaSy...",
+  authDomain: "amitai-bar-mitzvah.firebaseapp.com",
+  projectId: "amitai-bar-mitzvah",
+  ...
+};' class="w-full p-3 border border-slate-200 rounded-lg text-xs font-mono focus:ring-2 focus:ring-indigo-500 focus:outline-none bg-slate-50"></textarea>
+                    </div>
+
+                    <div class="pt-2">
+                        <button onclick="saveAndConnectFirebase()" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 px-6 rounded-xl transition shadow-lg flex items-center justify-center gap-2">
+                            <span>⚡</span> שמור הגדרות והתחבר לענן של גוגל
+                        </button>
+                    </div>
+
+                    <div class="pt-4 border-t border-slate-100">
+                        <h3 class="font-bold text-slate-800 text-sm mb-2">📌 איך משיגים את הקוד הזה שוב?</h3>
+                        <ol class="list-decimal list-inside text-xs text-slate-600 space-y-1.5 leading-relaxed">
+                            <li>כנסו ל- <a href="https://console.firebase.google.com/" target="_blank" class="text-indigo-600 hover:underline font-bold">Firebase Console</a> והכנסו לפרויקט שלכם.</li>
+                            <li>לחצו על <b>גלגל השיניים של ההגדרות (Settings)</b> ליד Project Overview בצד שמאל למעלה -> <b>Project settings</b>.</li>
+                            <li>גללו לתחתית העמוד לקטגוריית <b>Your apps</b>.</li>
+                            <li>שם תראו את הריבוע שמכיל את קוד ה-SDK. העתיקו את כל הבלוק והדביקו כאן למעלה (המפענח החכם החדש יבין אותו בכל מקרה!).</li>
+                        </ol>
+                    </div>
                 </div>
             </div>
         </section>
 
-        <!-- TOAST NOTIFICATION -->
-        <div id="toast" class="hidden fixed bottom-4 right-4 bg-slate-800 text-white px-4 py-3 rounded-lg shadow-lg flex items-center gap-2 z-50">
-            <span>✓</span>
-            <span id="toastMessage"></span>
-            <button onclick="closeToast()" class="ml-auto text-xs font-bold">✕</button>
-        </div>
-
-        <!-- WHATSAPP MODAL -->
-        <div id="waModal" class="hidden fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4">
-            <div class="bg-white rounded-2xl shadow-xl max-w-md w-full p-6 space-y-4">
-                <h3 class="text-lg font-bold text-slate-800">📱 שיתוף בוואטסאפ</h3>
-                <textarea id="waMessageText" class="w-full p-3 border border-slate-200 rounded-lg text-xs focus:ring-2 focus:ring-emerald-500 focus:outline-none" rows="6"></textarea>
-                <div class="flex gap-2 justify-end">
-                    <button onclick="closeWaModal()" class="px-4 py-2 rounded-lg bg-slate-200 text-slate-700 font-semibold text-sm hover:bg-slate-300 transition">ביטול</button>
-                    <button onclick="sendWa('972')" class="px-4 py-2 rounded-lg bg-emerald-600 text-white font-semibold text-sm hover:bg-emerald-700 transition flex items-center gap-2">
-                        <span>📤</span> שלח בוואטסאפ
-                    </button>
-                </div>
-            </div>
-        </div>
-
-        <!-- LOG SUMMARY MODAL -->
-        <div id="logSummaryModal" class="hidden fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4">
-            <div class="bg-white rounded-2xl shadow-xl max-w-md w-full p-6 space-y-4">
-                <h3 class="text-lg font-bold text-slate-800">📜 סיכום ציוד</h3>
-                <textarea id="logSummaryText" class="w-full p-3 border border-slate-200 rounded-lg text-xs font-mono focus:ring-2 focus:ring-indigo-500 focus:outline-none" rows="8"></textarea>
-                <div class="flex gap-2 justify-end">
-                    <button onclick="closeLogSummary()" class="px-4 py-2 rounded-lg bg-slate-200 text-slate-700 font-semibold text-sm hover:bg-slate-300 transition">סגור</button>
-                    <button onclick="copyToClipboard()" class="px-4 py-2 rounded-lg bg-indigo-600 text-white font-semibold text-sm hover:bg-indigo-700 transition">📋 העתק</button>
-                </div>
-            </div>
-        </div>
-
     </main>
 
-    <!-- SCRIPTS -->
+    <!-- FOOTER -->
+    <footer class="max-w-4xl mx-auto px-4 mt-12 text-center text-xs text-slate-400">
+        <p>נבנה באהבה לקראת שבת בר המצווה של אמיתי היקר • מאי 2026</p>
+    </footer>
+
+    <div id="logSummaryModal" class="hidden fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+        <div class="bg-white rounded-2xl shadow-xl w-full max-w-lg p-6 space-y-4">
+            <div class="flex justify-between items-center">
+                <h3 class="font-bold text-lg text-slate-800">📜 סיכום ציוד</h3>
+                <button onclick="closeLogSummary()" class="text-slate-400 hover:text-slate-600 font-bold">סגור X</button>
+            </div>
+            <textarea id="logSummaryText" rows="10" readonly class="w-full p-3 text-xs bg-slate-50 border rounded-lg font-mono"></textarea>
+            <button onclick="copyToClipboard()" class="w-full bg-indigo-600 text-white font-bold py-2 rounded-lg text-sm">העתק ללוח</button>
+        </div>
+    </div>
+
+
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
+
+    <script src="js/config.js"></script>
     <script src="js/api.js"></script>
     <script src="js/app.js"></script>
     <script src="js/ui.js"></script>
+
 </body>
 </html>
+
