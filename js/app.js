@@ -1,24 +1,24 @@
 console.log("App is alive!");
 
 const defaultTasks = [
-    { id: "t1", title: "תיאום מול הגבאי: קבלת מפתח לביהכנ\"ס ליום שישי ובירור נטרול האזעקה", deadline: "2026-06-02", status: "todo", notes: "לתאם עם גבאי בית הכנסת" },
-    { id: "t2", title: "צילום של אמיתי בבית הכנסת ביום שישי בבוקר והעברת החומרים לאחותי לעריכה", deadline: "2026-06-05", status: "todo", notes: "לשלוח לרגינה" },
-    { id: "t3", title: "השלמת קניות בגדים, נעליים והתאמות לכל בני המשפחה", deadline: "2026-06-05", status: "todo", notes: "יעד סיום: שבוע לפני" },
-    { id: "t4", title: "כתיבת ברכת ההורים לאמיתי", deadline: "2026-06-07", status: "todo", notes: "נצר + נעמה", category: "main", responsible: "משותף", createdAt: Date.now() - 7200000 },
-    { id: "t5", title: "כתיבת השיר המיוחד לאירוע", deadline: "2026-06-08", status: "todo", notes: "", category: "main", responsible: "נעמה", createdAt: Date.now() - 3600000 },
-    { id: "t6", title: "עריכה, עיצוב גרפי סופי ושליחה לדפוס של העלון המיוחד", deadline: "2026-06-06", status: "todo", notes: "", category: "main", responsible: "נעמה" },
-    { id: "t7", title: "הכנה, עריכה והדפסה של חומרי חדר הבריחה (רמזים, כרטיסיות)", deadline: "2026-06-09", status: "todo", notes: "תוכן לאחת הדמויות" },
-    { id: "t8", title: "חזרות ותרגול של אמיתי על דרשת בר המצווה שלו", deadline: "2026-06-11", status: "todo", notes: "לוודא שהוא מרגיש בנוח" },
-    { id: "t9", title: "מעקב הגעה ואיסוף של הזמירונים שהוזמנו", deadline: "2026-06-05", status: "todo", notes: "ישמשו גם כמזכרת לאורחים", category: "main" },
-    { id: "t10", title: "הכנת תוכנית חלוקת חדרים מוגדרת לאורחים בווילה", deadline: "2026-06-09", status: "todo", notes: "", category: "main", responsible: "משותף" },
-    { id: "t11", title: "חישוב כמויות מדויק של שתייה קלה וחריפה לפי מספר האורחים הסופי", deadline: "2026-06-08", status: "todo", notes: "לאולם וביתא" },
-    { id: "t12", title: "ביצוע רכישת קניות יבשות וכלים חד פעמיים (ראו לשונית קניות)", deadline: "2026-06-10", status: "todo", notes: "עדיף לבצע ביום שני" },
+    { id: "t1", title: "תיאום מול הגבאי: קבלת מפתח לביהכנ\"ס ליום שישי ובירור נטרול האזעקה", deadline: "2026-06-02", status: "todo", notes: "לצורך הצילומים לקליפ", category: "main", responsible: "נצר", createdAt: Date.now() - 3600000 * 24 },
+    { id: "t2", title: "צילום של אמיתי בבית הכנסת ביום שישי בבוקר והעברת החומרים לאחותי לעריכה", deadline: "2026-06-05", status: "todo", notes: "אחותי צריכה את זה לעריכת הקליפ", category: "main", responsible: "נצר", createdAt: Date.now() - 3600000 * 23 },
+    { id: "t3", title: "השלמת קניות בגדים, נעליים והתאמות לכל בני המשפחה", deadline: "2026-06-05", status: "todo", notes: "יעד סיום: שבוע לפני הבר מצווה", category: "main", responsible: "נעמה", createdAt: Date.now() - 3600000 * 20 },
+    { id: "t4", title: "כתיבת ברכת ההורים לאמיתי", deadline: "2026-06-07", status: "todo", notes: "נצר + נעמה", category: "main", responsible: "משותף", createdAt: Date.now() - 3600000 * 18 },
+    { id: "t5", title: "כתיבת השיר המיוחד לאירוע", deadline: "2026-06-08", status: "todo", notes: "", category: "main", responsible: "נעמה", createdAt: Date.now() - 3600000 * 15 },
+    { id: "t6", title: "עריכה, עיצוב גרפי סופי ושליחה לדפוס של העלון המיוחד", deadline: "2026-06-06", status: "todo", notes: "", category: "main", responsible: "נעמה", createdAt: Date.now() - 3600000 * 12 },
+    { id: "t7", title: "הכנה, עריכה והדפסה של חומרי חדר הבריחה (רמזים, כרטיסיות)", deadline: "2026-06-09", status: "todo", notes: "תוכן לאחת הארוחות", category: "main", responsible: "משותף", createdAt: Date.now() - 3600000 * 10 },
+    { id: "t8", title: "חזרות ותרגול של אמיתי על דרשת בר המצווה שלו", deadline: "2026-06-11", status: "todo", notes: "לוודא שהוא מרגיש בנוח ובטוח", category: "main", responsible: "נצר", createdAt: Date.now() - 3600000 * 8 },
+    { id: "t9", title: "מעקב הגעה ואיסוף של הזמירונים שהוזמנו", deadline: "2026-06-05", status: "todo", notes: "ישמשו גם כמזכרת לאורחים", category: "main", responsible: "נצר", createdAt: Date.now() - 3600000 * 6 },
+    { id: "t10", title: "הכנת תוכנית חלוקת חדרים מוגדרת לאורחים בווילה", deadline: "2026-06-09", status: "todo", notes: "", category: "main", responsible: "נעמה", createdAt: Date.now() - 3600000 * 4 },
+    { id: "t11", title: "חישוב כמויות מדויק של שתייה קלה וחריפה לפי מספר האורחים הסופי", deadline: "2026-06-08", status: "todo", notes: "לאולם, לווילה ולקידוש בביהכנ\"ס", category: "main", responsible: "נצר", createdAt: Date.now() - 3600000 * 2 },
+    { id: "t12", title: "ביצוע רכישת קניות יבשות וכלים חד פעמיים (ראו לשונית קניות)", deadline: "2026-06-10", status: "todo", notes: "עדיף לבצע בתחילת השבוע כדי להוריד לחץ", category: "main", responsible: "משותף", createdAt: Date.now() - 3600000 * 1 },
     
     // עלון הדור Default tasks
-    { id: "alon1", title: "איסוף ברכות, איחולים ותמונות מהמשפחה המורחבת עבור עלון הדור", deadline: "2026-06-05", status: "todo", notes: "לשלוח לכולם" },
-    { id: "alon2", title: "כתיבת טור אישי מרגש על ידי ההורים עבור עלון הדור", deadline: "2026-06-06", status: "todo", notes: "נצר ונעמה כותבים טור אישי" },
-    { id: "alon3", title: "בחירת קונספט עיצובי, עריכה ועימוד של הדפים בעלון", deadline: "2026-06-07", status: "todo", notes: "אפשר להשתמש בתוכנות עיצוב" },
-    { id: "alon4", title: "הדפסת עלון הדור בבית דפוס בנתיבות ואיסוף העלונים", deadline: "2026-06-11", status: "todo", notes: "לתאם מול בית הדפוס" }
+    { id: "alon1", title: "איסוף ברכות, איחולים ותמונות מהמשפחה המורחבת עבור עלון הדור", deadline: "2026-06-05", status: "todo", notes: "לשלוח בקשה בקבוצת הווטסאפ המשפחתית", category: "alon", responsible: "נעמה", createdAt: Date.now() - 3600000 * 5 },
+    { id: "alon2", title: "כתיבת טור אישי מרגש על ידי ההורים עבור עלון הדור", deadline: "2026-06-06", status: "todo", notes: "נצר ונעמה כותבים יחד", category: "alon", responsible: "משותף", createdAt: Date.now() - 3600000 * 3 },
+    { id: "alon3", title: "בחירת קונספט עיצובי, עריכה ועימוד של הדפים בעלון", deadline: "2026-06-07", status: "todo", notes: "אפשר להשתמש בתוכנת Canva החינמית", category: "alon", responsible: "נעמה", createdAt: Date.now() - 3600000 * 2 },
+    { id: "alon4", title: "הדפסת עלון הדור בבית דפוס בנתיבות ואיסוף העלונים", deadline: "2026-06-11", status: "todo", notes: "לתאם מול בית הדפוס מראש זמנים וכמויות", category: "alon", responsible: "נצר", createdAt: Date.now() - 3600000 * 1 }
 ];
 
 const defaultShopping = [
@@ -37,11 +37,11 @@ const defaultShopping = [
 
 const defaultCalls = [
     { id: "c1", title: "🔌 בירור לוגיסטי מול הווילה", subtitle: "שעוני שבת, מזגנים, פלטה ומיחם", notes: "", done: false },
-    { id: "c2", title: "☕ בירור טכני מול אולם \"דעני לחנניה\"", subtitle: "לוודא שיש מיחם מים חמים גדול לשבת בנוסף לפלטות", notes: "", done: false },
-    { id: "c3", title: "🎬 ציוד מדיה לקבלת פנים (שישי אחה\"צ)", subtitle: "לוודא זמינות מקרן, מסך ומערכת סאונד תקינה", notes: "", done: false },
-    { id: "c4", title: "🤵 תיאום מול הרב-מלצרים", subtitle: "לוודא שהוא והצוות אחראים על קבלת האוכל", notes: "", done: false },
-    { id: "c5", title: "🕌 תיאום מול גבאי בית הכנסת", subtitle: "סגירת חזנים, עליות לתורה לאורחים", notes: "", done: false },
-    { id: "c6", title: "📸 סגירת פונקציית צילום לשישי אחה\"צ", subtitle: "להחליט האם שוכרים צלם לשעה", notes: "", done: false }
+    { id: "c2", title: "☕ בירור טכני מול אולם \"דעני לחנניה\"", subtitle: "לוודא שיש מיחם מים חמים גדול לשבת בנוסף לפלטות והמקררים", notes: "", done: false },
+    { id: "c3", title: "🎬 ציוד מדיה לקבלת פנים (שישי אחה\"צ)", subtitle: "לוודא זמינות מקרן, מסך ומערכת סאונד תקינה להקרנת הקליפ", notes: "", done: false },
+    { id: "c4", title: "🤵 תיאום מול הרב-מלצרים", subtitle: "לוודא שהוא והצוות אחראים על קבלת האוכל, ארגונו וחימומו לאורך השבת", notes: "", done: false },
+    { id: "c5", title: "🕌 תיאום מול גבאי בית הכנסת", subtitle: "סגירת חזנים, עליות לתורה לאורחים, ותזמון דבר התורה של אמיתי", notes: "", done: false },
+    { id: "c6", title: "📸 סגירת פונקציית צילום לשישי אחה\"צ", subtitle: "להחליט האם שוכרים צלם לשעה של קבלת הפנים או שממנים בן משפחה", notes: "", done: false }
 ];
 
 // Default Villa Rooms
@@ -63,10 +63,8 @@ let rsvps = JSON.parse(localStorage.getItem('bm_rsvps')) || [];
 let budget = JSON.parse(localStorage.getItem('bm_budget')) || [];
 let logistics = JSON.parse(localStorage.getItem('bm_logistics')) || [];
 let menu = JSON.parse(localStorage.getItem('bm_menu')) || [];
-let guestDiets = JSON.parse(localStorage.getItem('bm_guestDiets')) || [];
 let currentMenuFilter = 'הכל';
 let editingMenuId = null;
-let editingGuestDietId = null;
 let schedule = JSON.parse(localStorage.getItem('bm_schedule')) || [];
 let editingScheduleId = null;
 let currentTab = 'tasks';
@@ -89,7 +87,6 @@ function saveLocalState() {
         'bm_budget': budget,
         'bm_logistics': logistics,
         'bm_menu': menu,
-        'bm_guestDiets': guestDiets,
         'bm_schedule': schedule
     };
 
@@ -872,97 +869,6 @@ async function toggleKitPacked(logId) {
     if (isCloudConnected && db) dbUpdate('logistics', logId, { packed: log.packed });
 }
 
-// ============================================
-// GUEST DIETARY REQUIREMENTS FUNCTIONS
-// ============================================
-
-async function addNewGuestDiet() {
-    const nameEl = document.getElementById('newGuestDietName');
-    const fridayDishEl = document.getElementById('newGuestDietFriday');
-    const saturdayDishEl = document.getElementById('newGuestDietSaturday');
-    const thirdDishEl = document.getElementById('newGuestDietThird');
-
-    if (!nameEl || !nameEl.value.trim()) {
-        showToast("אנא הזינו שם אורח!");
-        return;
-    }
-
-    // Get dietary restrictions
-    const vegetarian = document.getElementById('dietRestrictionVegetarian')?.checked || false;
-    const vegan = document.getElementById('dietRestrictionVegan')?.checked || false;
-    const glutenFree = document.getElementById('dietRestrictionGlutenFree')?.checked || false;
-
-    if (!vegetarian && !vegan && !glutenFree) {
-        showToast("אנא בחרו לפחות הגבלה דיאטה אחת!");
-        return;
-    }
-
-    const newGuestDiet = {
-        id: 'gd_' + Date.now(),
-        name: nameEl.value.trim(),
-        restrictions: {
-            vegetarian: vegetarian,
-            vegan: vegan,
-            glutenFree: glutenFree
-        },
-        meals: {
-            friday: { dishId: fridayDishEl?.value || '', dishName: fridayDishEl?.options[fridayDishEl.selectedIndex]?.text || '' },
-            saturday: { dishId: saturdayDishEl?.value || '', dishName: saturdayDishEl?.options[saturdayDishEl.selectedIndex]?.text || '' },
-            third: { dishId: thirdDishEl?.value || '', dishName: thirdDishEl?.options[thirdDishEl.selectedIndex]?.text || '' }
-        }
-    };
-
-    guestDiets.push(newGuestDiet);
-    saveLocalState();
-    renderGuestDiets();
-
-    if (isCloudConnected && db) {
-        dbSet('guestDiets', newGuestDiet.id, newGuestDiet);
-    }
-
-    // Reset form
-    nameEl.value = "";
-    if (document.getElementById('dietRestrictionVegetarian')) document.getElementById('dietRestrictionVegetarian').checked = false;
-    if (document.getElementById('dietRestrictionVegan')) document.getElementById('dietRestrictionVegan').checked = false;
-    if (document.getElementById('dietRestrictionGlutenFree')) document.getElementById('dietRestrictionGlutenFree').checked = false;
-
-    showToast("אורח עם דרישות דיאטה נוסף בהצלחה!");
-}
-
-async function deleteGuestDiet(guestDietId) {
-    guestDiets = guestDiets.filter(g => g.id !== guestDietId);
-    saveLocalState();
-    renderGuestDiets();
-
-    if (isCloudConnected && db) {
-        dbDelete('guestDiets', guestDietId);
-    }
-    showToast("האורח הוסר מרשימת הדרישות הדיאטה");
-}
-
-async function updateGuestDietMeal(guestDietId, mealType, dishId, dishName) {
-    const guest = guestDiets.find(g => g.id === guestDietId);
-    if (guest) {
-        guest.meals[mealType] = { dishId, dishName };
-        saveLocalState();
-        renderGuestDiets();
-
-        if (isCloudConnected && db) {
-            dbUpdate('guestDiets', guestDietId, { meals: guest.meals });
-        }
-    }
-}
-
-function startEditGuestDiet(guestDietId) {
-    editingGuestDietId = guestDietId;
-    renderGuestDiets();
-}
-
-function cancelEditGuestDiet() {
-    editingGuestDietId = null;
-    renderGuestDiets();
-}
-
 async function addNewMenuItem() {
     const nameEl = document.getElementById('newMenuName');
     const mealEl = document.getElementById('newMenuMeal');
@@ -1199,7 +1105,6 @@ window.onload = function() {
         try { renderRsvps(); } catch(e) { console.error("Error rendering RSVPs on boot:", e); }
         try { renderBudget(); } catch(e) { console.error("Error rendering budget on boot:", e); }
         try { setTaskViewMode(taskViewMode); } catch(e) { console.error("Error setting task view mode on boot:", e); }
-        try { renderGuestDiets(); } catch(e) { console.error("Error rendering guest diets on boot:", e); }
 
         // Start countdown interval safely
         try {
@@ -1238,3 +1143,4 @@ window.onload = function() {
 
     populateTimeOptions();
 };
+
