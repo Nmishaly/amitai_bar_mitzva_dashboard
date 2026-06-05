@@ -127,7 +127,7 @@ function renderTasks() {
                 <div class="p-4 bg-slate-50 border-y border-indigo-100 space-y-3">
                     <div class="text-xs font-bold text-indigo-800 flex items-center gap-1">✏️ עריכת משימה</div>
                     <div class="grid grid-cols-1 sm:grid-cols-3 gap-2">
-                        <input type="text" id="editTitle_${task.id}" value="${task.title}" placeholder="שם המשימה" class="col-span-1 sm:col-span-2 p-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 font-medium">
+                        <input type="text" id="editTitle_${task.id}" value="${task.title}" placeholder="שם המשימה" class="col-span-1 sm:col-span-2 p-2 border border-slate-200 rounded-lg text-sm font-medium focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-white">
                         <input type="date" id="editDeadline_${task.id}" value="${task.deadline || '2026-06-12'}" class="p-2 border border-slate-200 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500 font-medium">
                         <select id="editResponsible_${task.id}" class="p-2 border border-slate-200 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500 font-medium">
                             <option value="לא הוגדר" ${task.responsible === 'לא הוגדר' ? 'selected' : ''}>👤 לא הוגדר</option>
@@ -135,11 +135,11 @@ function renderTasks() {
                             <option value="נעמה" ${task.responsible === 'נעמה' ? 'selected' : ''}>נעמה 👩</option>
                             <option value="משותף" ${task.responsible === 'משותף' ? 'selected' : ''}>משותף 👥</option>
                         </select>
-                        <input type="text" id="editNotes_${task.id}" value="${task.notes || ''}" placeholder="הערות ומידע נוסף..." class="col-span-1 sm:col-span-2 p-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 font-medium">
+                        <input type="text" id="editNotes_${task.id}" value="${task.notes || ''}" placeholder="הערות ומידע נוסף..." class="col-span-1 sm:col-span-2 p-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-white">
                     </div>
                     <div class="flex justify-end gap-2 pt-1">
                         <button onclick="cancelEditTask()" class="bg-slate-200 hover:bg-slate-300 text-slate-700 font-bold py-1.5 px-4 rounded-lg text-xs transition">ביטול</button>
-                        <button onclick="saveEditTask('${task.id}', 'main')" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-1.5 px-4 rounded-lg text-xs transition shadow-sm">שמור</button>
+                        <button onclick="saveEditTask('${task.id}', 'main')" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-1.5 px-4 rounded-lg text-xs transition shadow-sm">שמור שינויים</button>
                     </div>
                 </div>
             `;
@@ -157,9 +157,9 @@ function renderTasks() {
                         ${task.notes ? `<p class="text-xs text-slate-400 mt-1 flex items-center gap-1">📌 ${task.notes}</p>` : ''}
                     </div>
                     <div class="flex items-center gap-2 self-end sm:self-auto">
-                        <button onclick="updateTaskStatus('${task.id}', 'todo')" class="px-2.5 py-1 rounded-full text-xs font-semibold border ${task.status === 'todo' ? 'bg-slate-200 border-slate-300 text-slate-700' : 'bg-white border-slate-200 text-slate-500 hover:bg-slate-50'} transition">📋</button>
-                        <button onclick="updateTaskStatus('${task.id}', 'progress')" class="px-2.5 py-1 rounded-full text-xs font-semibold border ${task.status === 'progress' ? 'bg-amber-100 border-amber-300 text-amber-800' : 'bg-white border-slate-200 text-slate-500 hover:bg-slate-50'} transition">⏳</button>
-                        <button onclick="updateTaskStatus('${task.id}', 'done')" class="px-2.5 py-1 rounded-full text-xs font-semibold border ${task.status === 'done' ? 'bg-emerald-100 border-emerald-300 text-emerald-800' : 'bg-white border-slate-200 text-slate-500 hover:bg-slate-50'} transition">✅</button>
+                        <button onclick="updateTaskStatus('${task.id}', 'todo')" class="px-2.5 py-1 rounded-full text-xs font-semibold border ${task.status === 'todo' ? 'bg-slate-200 border-slate-300 text-slate-800 font-bold' : 'bg-transparent border-slate-200 text-slate-400'}">ללא התחילה</button>
+                        <button onclick="updateTaskStatus('${task.id}', 'progress')" class="px-2.5 py-1 rounded-full text-xs font-semibold border ${task.status === 'progress' ? 'bg-amber-100 border-amber-300 text-amber-800 font-bold' : 'bg-transparent border-slate-200 text-slate-400'}">בתהליך</button>
+                        <button onclick="updateTaskStatus('${task.id}', 'done')" class="px-2.5 py-1 rounded-full text-xs font-semibold border ${task.status === 'done' ? 'bg-emerald-100 border-emerald-300 text-emerald-800 font-bold' : 'bg-transparent border-slate-200 text-slate-400'}">בוצע</button>
                         
                         <div class="flex items-center gap-1 pr-1 border-r border-slate-100 font-bold">
                             <button onclick="startEditTask('${task.id}')" class="p-1.5 text-slate-300 hover:text-indigo-600 transition rounded-md hover:bg-indigo-50" title="עריכת משימה">
@@ -229,9 +229,9 @@ function renderRecentTasks() {
                     </p>
                 </div>
                 <div class="flex items-center gap-2 self-end sm:self-auto">
-                    <button onclick="updateTaskStatus('${task.id}', 'todo')" class="px-2.5 py-1 rounded-full text-xs font-semibold border ${task.status === 'todo' ? 'bg-slate-200 border-slate-300 text-slate-700' : 'bg-white border-slate-200 text-slate-500 hover:bg-slate-50'} transition">📋</button>
-                    <button onclick="updateTaskStatus('${task.id}', 'progress')" class="px-2.5 py-1 rounded-full text-xs font-semibold border ${task.status === 'progress' ? 'bg-amber-100 border-amber-300 text-amber-800' : 'bg-white border-slate-200 text-slate-500 hover:bg-slate-50'} transition">⏳</button>
-                    <button onclick="updateTaskStatus('${task.id}', 'done')" class="px-2.5 py-1 rounded-full text-xs font-semibold border ${task.status === 'done' ? 'bg-emerald-100 border-emerald-300 text-emerald-800' : 'bg-white border-slate-200 text-slate-500 hover:bg-slate-50'} transition">✅</button>
+                    <button onclick="updateTaskStatus('${task.id}', 'todo')" class="px-2.5 py-1 rounded-full text-xs font-semibold border ${task.status === 'todo' ? 'bg-slate-200 border-slate-300 text-slate-800 font-bold' : 'bg-transparent border-slate-200 text-slate-400'}">ללא התחילה</button>
+                    <button onclick="updateTaskStatus('${task.id}', 'progress')" class="px-2.5 py-1 rounded-full text-xs font-semibold border ${task.status === 'progress' ? 'bg-amber-100 border-amber-300 text-amber-800 font-bold' : 'bg-transparent border-slate-200 text-slate-400'}">בתהליך</button>
+                    <button onclick="updateTaskStatus('${task.id}', 'done')" class="px-2.5 py-1 rounded-full text-xs font-semibold border ${task.status === 'done' ? 'bg-emerald-100 border-emerald-300 text-emerald-800 font-bold' : 'bg-transparent border-slate-200 text-slate-400'}">בוצע</button>
                 </div>
             </div>
         `;
@@ -350,11 +350,11 @@ function renderShopping() {
             const itemHtml = `
                 <div class="p-4 flex justify-between items-center hover:bg-slate-50 transition">
                     <label class="flex items-center gap-3 cursor-pointer select-none flex-1">
-                        <input type="checkbox" ${item.bought ? 'checked' : ''} onchange="toggleShopItem('${item.id}')" class="w-5 h-5 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500">
+                        <input type="checkbox" ${item.bought ? 'checked' : ''} onchange="toggleShopItem('${item.id}')" class="w-5 h-5 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500 cursor-pointer">
                         <span class="text-sm font-medium ${item.bought ? 'line-through text-slate-400' : 'text-slate-800'}">${item.title}</span>
                     </label>
                     <button onclick="deleteShopItem('${item.id}')" class="p-1.5 text-slate-300 hover:text-red-500 transition rounded-md hover:bg-red-50">
-                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0 1 16.138 21H7.862a2 2 0 0 1-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 0 0-1-1h-4a1 1 0 0 0-1 1v3M4 7h16"></path></svg>
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
                     </button>
                 </div>
             `;
@@ -448,14 +448,14 @@ function renderCalls() {
                             <h3 class="font-extrabold text-slate-800 text-sm">${call.title}</h3>
                             <p class="text-xs text-indigo-600 font-semibold mt-0.5">${call.subtitle}</p>
                         </div>
-                        <button onclick="toggleCallDone('${call.id}')" class="px-3 py-1 rounded-full text-xs font-bold border transition ${call.done ? 'bg-emerald-100 border-emerald-300 text-emerald-800' : 'bg-white border-slate-200 text-slate-600'}">
+                        <button onclick="toggleCallDone('${call.id}')" class="px-3 py-1 rounded-full text-xs font-bold border transition ${call.done ? 'bg-emerald-100 border-emerald-300 text-emerald-800' : 'bg-slate-100 border-slate-200 text-slate-500'}">
                             ${call.done ? '✅ טופל' : '📞 פתוח'}
                         </button>
                     </div>
                     
                     <div class="mt-3">
                         <label class="text-[10px] text-slate-400 font-bold block mb-1">הערות וסיכום:</label>
-                        <textarea onchange="updateCallNotes('${call.id}', this.value)" placeholder="הקלידו כאן מידע חשוב..." class="w-full p-2.5 border border-slate-200 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-indigo-500 resize-none" rows="3">${call.notes || ''}</textarea>
+                        <textarea onchange="updateCallNotes('${call.id}', this.value)" placeholder="הקלידו כאן מידע חשוב..." class="w-full p-2.5 border border-slate-200 rounded-xl text-xs focus:ring-1 focus:ring-indigo-500 focus:outline-none bg-slate-50" rows="3">${call.notes || ''}</textarea>
                     </div>
                 </div>
                 <div class="flex justify-end border-t border-slate-50 pt-2">
@@ -572,85 +572,11 @@ function renderLogistics(filter = 'all') {
                     `).join('')}
                 </div>
                 <div class="flex gap-1 mt-3">
-                    <input type="text" id="input_${log.id}" placeholder="פריט..." onkeydown="if(event.key==='Enter') addLogItemInline('${log.id}')" class="w-full text-xs border rounded px-2 py-1 focus:outline-none focus:ring-1 focus:ring-blue-500">
+                    <input type="text" id="input_${log.id}" placeholder="פריט..." onkeydown="if(event.key==='Enter') addLogItemInline('${log.id}')" class="w-full text-xs border rounded px-2 py-1">
                     <button onclick="addLogItemInline('${log.id}')" class="bg-blue-600 text-white px-2 rounded text-xs">➕</button>
                 </div>
             </div>
         `);
-    });
-}
-
-// ============================================
-// RENDER GUEST DIETARY REQUIREMENTS
-// ============================================
-
-function renderGuestDiets() {
-    const container = document.getElementById('guestDietsContainer');
-    if (!container) return;
-    container.innerHTML = "";
-
-    if (guestDiets.length === 0) {
-        container.innerHTML = `
-            <div class="col-span-full p-8 text-center text-slate-400 text-sm bg-white rounded-2xl border border-slate-100">
-                אין עדיין אורחים עם דרישות דיאטה שלא סטנדרטיות. הוסיפו אורח חדש למעלה!
-            </div>
-        `;
-        return;
-    }
-
-    guestDiets.forEach(guest => {
-        // בנייה של תג הגבלות דיאטה
-        const restrictionsTags = [];
-        if (guest.restrictions.vegetarian) restrictionsTags.push('🥬 צמחוני');
-        if (guest.restrictions.vegan) restrictionsTags.push('🌱 טבעוני');
-        if (guest.restrictions.glutenFree) restrictionsTags.push('🚫 ללא גלוטן');
-
-        // בנייה של טבלה עם בחירת מנות
-        let mealsHtml = `
-            <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 mt-3">
-        `;
-
-        ['friday', 'saturday', 'third'].forEach(mealType => {
-            const mealLabel = mealType === 'friday' ? '🍷 ערב שבת' : mealType === 'saturday' ? '⛪ בוקר שבת' : '🥧 סעודה שלישית';
-            const currentMeal = guest.meals[mealType];
-            
-            mealsHtml += `
-                <div>
-                    <label class="block text-xs font-bold text-slate-600 mb-1">${mealLabel}</label>
-                    <select onchange="updateGuestDietMeal('${guest.id}', '${mealType}', this.value, this.options[this.selectedIndex].text)" class="w-full p-2 border border-slate-200 rounded-lg text-xs bg-white focus:ring-1 focus:ring-indigo-500 focus:outline-none">
-                        <option value="">בחר מנה...</option>
-            `;
-            
-            menu.forEach(dish => {
-                const isSelected = currentMeal?.dishId === dish.id ? 'selected' : '';
-                mealsHtml += `<option value="${dish.id}" ${isSelected}>${dish.name}</option>`;
-            });
-            
-            mealsHtml += `
-                    </select>
-                </div>
-            `;
-        });
-
-        mealsHtml += `</div>`;
-
-        const cardHtml = `
-            <div class="bg-white rounded-2xl shadow-sm border border-slate-100 p-5 hover:shadow-md transition">
-                <div class="flex justify-between items-start mb-3">
-                    <div>
-                        <h3 class="font-extrabold text-slate-800 text-sm">${guest.name}</h3>
-                        <div class="flex flex-wrap gap-1.5 mt-2">
-                            ${restrictionsTags.map(tag => `<span class="inline-block bg-indigo-100 text-indigo-800 text-[10px] px-2 py-0.5 rounded-full font-semibold">${tag}</span>`).join('')}
-                        </div>
-                    </div>
-                    <button onclick="deleteGuestDiet('${guest.id}')" class="text-slate-300 hover:text-red-500 transition text-xs font-semibold">🗑️</button>
-                </div>
-
-                <!-- Meal Selection -->
-                ${mealsHtml}
-            </div>
-        `;
-        container.insertAdjacentHTML('beforeend', cardHtml);
     });
 }
 
@@ -774,10 +700,10 @@ function switchTab(tabId) {
     else if (tabId === 'rsvp') renderRsvps();
     else if (tabId === 'shopping') renderShopping();
     else if (tabId === 'rooms') renderRooms();
-    else if (tabId === 'menu') { renderMenu(); renderGuestDiets(); }
+    else if (tabId === 'menu') renderMenu(); // הוספנו את זה
     else if (tabId === 'budget') renderBudget();
     else if (tabId === 'calls') renderCalls();
-    else if (tabId === 'schedule') renderSchedule();
+    else if (tabId === 'schedule') renderSchedule(); // הוספנו את זה
     else if (tabId === 'recent') renderRecentTasks();
     else if (tabId === 'logistics') renderLogistics();
 }
@@ -888,3 +814,4 @@ function generateLogisticsSummary() {
     document.getElementById('logSummaryText').value = msg;
     document.getElementById('logSummaryModal').classList.remove('hidden');
 }
+
