@@ -1,273 +1,1116 @@
 diff --git a/index.html b/index.html
-index 322e474..e4620c9 100644
+index e4620c9..8338440 100644
 --- a/index.html
 +++ b/index.html
-@@ -651,41 +651,40 @@
+@@ -13,6 +13,14 @@
+     </style>
+ </head>
+ <body>
++
++    <!-- LOADING OVERLAY -->
++    <div id="loadingOverlay" class="fixed inset-0 bg-indigo-950/90 z-50 flex flex-col items-center justify-center gap-4">
++        <div class="w-16 h-16 border-4 border-indigo-300 border-t-amber-400 rounded-full animate-spin"></div>
++        <p class="text-white font-bold text-lg">טוען את הדשבורד...</p>
++        <p class="text-indigo-300 text-sm">מתחבר לענן של גוגל</p>
++    </div>
++
+     <!-- TOP HEADER -->
+     <header class="bg-gradient-to-r from-indigo-900 via-indigo-800 to-purple-950 text-white shadow-xl">
+         <div class="max-w-4xl mx-auto px-4 py-6">
+@@ -43,7 +51,7 @@
+     </header>
+ 
+     <!-- MAIN CONTAINER -->
+-    <main class="max-w-4xl mx-auto px-4 mt-6">
++    <main class="max-w-4xl mx-auto px-4 mt-6 pb-24 sm:pb-6">
+         
+         <!-- DASHBOARD HERO STATS -->
+         <section id="dashboardStats" class="bg-white rounded-2xl shadow-md p-6 mb-6 border border-slate-100">
+@@ -91,8 +99,8 @@
+             </div>
+         </section>
+ 
+-        <!-- NAVIGATION TABS -->
+-        <nav class="flex flex-wrap gap-2 border-b border-slate-200 bg-white p-2 rounded-xl shadow-sm mb-6">
++        <!-- NAVIGATION TABS — Desktop only -->
++        <nav class="hidden sm:flex flex-wrap gap-2 border-b border-slate-200 bg-white p-2 rounded-xl shadow-sm mb-6">
+             <button onclick="switchTab('tasks')" id="tab-tasks" class="tab-active flex-1 min-w-[110px] py-3 px-2 text-center text-xs sm:text-sm font-semibold transition hover:bg-slate-50 flex justify-center items-center gap-1.5 rounded-lg">
+                 <span>📅</span>
+                 <span>משימות</span>
+@@ -147,7 +155,7 @@
+                     <span class="text-indigo-600 text-lg">➕</span> הוספת משימה חדשה
+                 </h3>
+                 <div class="grid grid-cols-1 sm:grid-cols-4 gap-3">
+-                    <input type="text" id="newTaskTitle" placeholder="שם המשימה (לדוגמה: לקנות סוכריות)" class="col-span-1 sm:col-span-2 p-2.5 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none font-medium font-semibold">
++                    <input type="text" id="newTaskTitle" placeholder="שם המשימה (לדוגמה: לקנות סוכריות)" onkeydown="if(event.key==='Enter') addNewTask()" class="col-span-1 sm:col-span-2 p-2.5 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none font-medium font-semibold">
+                     <input type="date" id="newTaskDeadline" class="p-2.5 border border-slate-200 rounded-lg text-sm bg-white focus:ring-2 focus:ring-indigo-500 focus:outline-none font-medium font-semibold" value="2026-06-12">
+                     <select id="newTaskResponsible" class="p-2.5 border border-slate-200 rounded-lg text-sm bg-white focus:ring-2 focus:ring-indigo-500 focus:outline-none font-medium font-semibold">
+                         <option value="לא הוגדר" selected>👤 מי אחראי? (לא הוגדר)</option>
+@@ -288,7 +296,7 @@
+                 <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+                     <div>
+                         <label class="block text-xs font-bold text-slate-600 mb-1">שם ושם משפחה</label>
+-                        <input type="text" id="rsvpName" placeholder="לדוגמה: משפחת כהן" class="w-full p-2.5 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-teal-500 font-medium">
++                        <input type="text" id="rsvpName" placeholder="לדוגמה: משפחת כהן" onkeydown="if(event.key==='Enter') addNewRsvp()" class="w-full p-2.5 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-teal-500 font-medium">
+                     </div>
+                     <div>
+                         <label class="block text-xs font-bold text-slate-600 mb-1">מבוגרים (מעל גיל 12)</label>
+@@ -358,9 +366,14 @@
+                 </div>
+             </div>
+ 
+-            <!-- RSVP List Table -->
++            <!-- RSVP List — Desktop Table / Mobile Cards -->
+             <div class="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
+-                <div class="overflow-x-auto">
++                <!-- Search bar -->
++                <div class="px-4 py-3 border-b border-slate-100 bg-slate-50">
++                    <input type="text" id="rsvpSearch" placeholder="🔍 חיפוש אורח לפי שם..." oninput="filterRsvpList()" class="w-full p-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-teal-500">
++                </div>
++                <!-- Desktop Table (hidden on mobile) -->
++                <div class="hidden sm:block overflow-x-auto">
+                     <table class="w-full text-right text-xs sm:text-sm">
+                         <thead class="bg-teal-50 text-teal-900 font-bold border-b border-teal-100">
+                             <tr>
+@@ -372,11 +385,11 @@
+                                 <th class="p-3 text-center">פעולות</th>
+                             </tr>
+                         </thead>
+-                        <tbody id="rsvpTableBody" class="divide-y divide-slate-100">
+-                            <!-- Injected by JavaScript -->
+-                        </tbody>
++                        <tbody id="rsvpTableBody" class="divide-y divide-slate-100"></tbody>
+                     </table>
+                 </div>
++                <!-- Mobile Cards (hidden on desktop) -->
++                <div class="sm:hidden divide-y divide-slate-100" id="rsvpCardsBody"></div>
+             </div>
+         </section>
+ 
+@@ -489,6 +502,7 @@
+             </div>
+ 
+             <!-- Rooms Grid List -->
++            <div id="roomsSummary"></div>
+             <div class="grid grid-cols-1 md:grid-cols-2 gap-4" id="roomsContainer"></div>
+         </section>
+ 
+@@ -499,12 +513,19 @@
+                 <h3 class="font-bold text-slate-800 mb-1 flex items-center gap-2">
+                     <span>💰</span> מעקב תקציב השבת שלכם
+                 </h3>
+-                <p class="text-xs text-slate-400 mb-4">יעד התקציב הכללי שלכם מוגדר על סך **33,000 ש"ח**.</p>
++                <div class="flex items-center gap-3 mb-4">
++                    <p class="text-xs text-slate-400">יעד תקציב:</p>
++                    <div class="flex items-center gap-1">
++                        <span class="text-slate-400 text-sm font-bold">₪</span>
++                        <input type="number" id="maxBudgetInput" value="33000" onchange="updateMaxBudget(this.value)" class="w-32 p-1.5 border border-slate-200 rounded-lg text-sm font-bold text-slate-800 focus:ring-2 focus:ring-indigo-500 focus:outline-none text-center">
++                        <span class="text-[10px] text-slate-400">(לחץ לעריכה)</span>
++                    </div>
++                </div>
+                 
+                 <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-4 text-center">
+                     <div class="bg-slate-50 p-3 rounded-xl border border-slate-100">
+                         <span class="block text-xs font-bold text-slate-500">יעד תקציב</span>
+-                        <span class="text-lg font-bold text-slate-800">33,000 ₪</span>
++                        <span id="budgetMaxDisplay" class="text-lg font-bold text-slate-800">33,000 ₪</span>
+                     </div>
+                     <div class="bg-rose-50 p-3 rounded-xl border border-rose-100">
+                         <span class="block text-xs font-bold text-rose-500">סה"כ הוצאות</span>
+@@ -529,7 +550,7 @@
+ 
+                 <!-- Budget Warning Badge -->
+                 <div id="budgetWarningBadge" class="hidden mt-4 p-3 bg-red-100 text-red-800 rounded-xl text-xs font-bold text-center border border-red-200">
+-                    ⚠️ שימו לב: חרגתם מיעד התקציב של 33,000 ש"ח!
++                    ⚠️ שימו לב: חרגתם מיעד התקציב!
+                 </div>
+             </div>
+ 
+@@ -651,37 +672,74 @@
          </section>
  
          <section id="content-schedule" class="hidden space-y-6">
-+            <!-- אזור הוספת פעילות -->
+-            <!-- אזור הוספת פעילות -->
++            <!-- הוספת פעילות -->
              <div class="bg-white p-4 rounded-2xl shadow-sm border border-slate-100">
--                <h3 class="font-bold text-slate-800 mb-3 flex items-center gap-2"><span>➕</span> הוספת פעילות ללו"ז</h3>
--                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
--                    <div>
--                        <label class="block text-xs font-bold text-slate-500 mb-1">שם הפעילות:</label>
--                        <input type="text" id="schTitle" placeholder="לדוגמה: קידוש" class="p-2.5 border rounded-lg text-sm w-full">
--                    </div>
-+                <h3 class="font-bold text-slate-800 mb-3 flex items-center gap-2"><span>➕</span> הוספת פעילות חדשה</h3>
-+                <div class="grid grid-cols-2 gap-3">
-+                    <input type="text" id="schTitle" placeholder="שם הפעילות" class="p-2 border rounded-lg text-sm">
-+                    <input type="text" id="schSpeaker" placeholder="דובר" class="p-2 border rounded-lg text-sm">
+                 <h3 class="font-bold text-slate-800 mb-3 flex items-center gap-2"><span>➕</span> הוספת פעילות חדשה</h3>
+                 <div class="grid grid-cols-2 gap-3">
+-                    <input type="text" id="schTitle" placeholder="שם הפעילות" class="p-2 border rounded-lg text-sm">
+-                    <input type="text" id="schSpeaker" placeholder="דובר" class="p-2 border rounded-lg text-sm">
++                    <input type="text" id="schTitle" placeholder="שם הפעילות" class="p-2 border rounded-lg text-sm" onkeydown="if(event.key==='Enter') addNewScheduleItem()">
++                    <input type="text" id="schSpeaker" placeholder="דובר / אחראי" class="p-2 border rounded-lg text-sm">
 +                </div>
-+                <button onclick="addNewScheduleItem()" class="mt-3 w-full bg-indigo-600 text-white font-bold py-2 rounded-lg text-sm">הוסף לבנק</button>
++                <div class="flex gap-2 mt-3">
++                    <button onclick="addNewScheduleItem()" class="flex-1 bg-indigo-600 text-white font-bold py-2 rounded-lg text-sm hover:bg-indigo-700 transition">הוסף לבנק</button>
++                    <button onclick="showScheduleSummary()" class="bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold py-2 px-4 rounded-lg text-sm transition flex items-center gap-1.5">
++                        <span>📋</span> הצג לו"ז מסודר
++                    </button>
++                </div>
 +            </div>
-+        
-+            <!-- לוח הגרירה -->
-+            <div class="flex flex-col gap-4">
-+                <div id="bank" class="bg-slate-100 p-4 rounded-2xl border-2 border-slate-200" ondrop="drop(event)" ondragover="allowDrop(event)">
-+                    <h3 class="font-bold mb-3 text-slate-700 text-center">בנק פעילויות (גרור מכאן לריבועים למטה)</h3>
-                     
--                    <div>
--                        <label class="block text-xs font-bold text-slate-500 mb-1">יום:</label>
--                        <select id="schDay" class="p-2.5 border rounded-lg text-sm w-full">
--                            <option value="שישי">יום שישי</option>
--                            <option value="שבת">יום שבת</option>
--                        </select>
-+                    <div id="activity-bank" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2">
-+                        </div>
-+                </div>
-+                
-+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-+                    <div id="col-friday-night" class="bg-blue-50 p-4 rounded-2xl min-h-[200px] border-2 border-dashed border-blue-200" ondrop="drop(event)" ondragover="allowDrop(event)">
-+                        <h3 class="font-bold mb-3 text-blue-800 text-center">כניסת שבת</h3>
-                     </div>
--                    
--                    <div>
--                        <label class="block text-xs font-bold text-slate-500 mb-1">בחר שעה:</label>
--                        <select id="schTime" class="p-2.5 border rounded-lg text-sm w-full bg-white">
--                            <option value="">בחר שעה...</option>
--                            </select>
-+                    <div id="col-friday-evening" class="bg-blue-50 p-4 rounded-2xl min-h-[200px] border-2 border-dashed border-blue-200" ondrop="drop(event)" ondragover="allowDrop(event)">
-+                        <h3 class="font-bold mb-3 text-blue-800 text-center">ערב שבת</h3>
-                     </div>
--                    
--                    <div>
--                        <label class="block text-xs font-bold text-slate-500 mb-1">דובר (דבר תורה, ברכה...):</label>
--                        <input type="text" id="schSpeaker" placeholder="שם הדובר" class="p-2.5 border rounded-lg text-sm w-full">
-+                    <div id="col-saturday-lunch" class="bg-blue-50 p-4 rounded-2xl min-h-[200px] border-2 border-dashed border-blue-200" ondrop="drop(event)" ondragover="allowDrop(event)">
-+                        <h3 class="font-bold mb-3 text-blue-800 text-center">צהריים</h3>
++
++            <!-- לו"ז מסודר modal -->
++            <div id="scheduleSummaryModal" class="hidden fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
++                <div class="bg-white rounded-2xl shadow-xl w-full max-w-lg p-6 space-y-4 max-h-[80vh] overflow-y-auto">
++                    <div class="flex justify-between items-center">
++                        <h3 class="font-bold text-lg text-slate-800">📋 לו"ז שבת בר המצווה — אמיתי</h3>
++                        <button onclick="document.getElementById('scheduleSummaryModal').classList.add('hidden')" class="text-slate-400 hover:text-slate-600 font-bold">✕</button>
 +                    </div>
-+                    <div id="col-third-meal" class="bg-blue-50 p-4 rounded-2xl min-h-[200px] border-2 border-dashed border-blue-200" ondrop="drop(event)" ondragover="allowDrop(event)">
-+                        <h3 class="font-bold mb-3 text-blue-800 text-center">סעודה שלישית</h3>
-                     </div>
--                    
--                    <label class="flex items-center gap-2 text-xs font-bold sm:col-span-2 mt-1">
--                        <input type="checkbox" id="schOverlap"> פעילות חופפת (מקבילה)
--                    </label>
++                    <div id="scheduleSummaryContent" class="space-y-4 text-sm"></div>
++                    <button onclick="copyScheduleSummary()" class="w-full bg-indigo-600 text-white font-bold py-2 rounded-lg text-sm">העתק ללוח 📋</button>
                  </div>
--                <button onclick="addNewScheduleItem()" class="mt-3 bg-purple-600 text-white font-bold py-2 px-6 rounded-lg text-sm">הוסף ללו"ז</button>
+-                <button onclick="addNewScheduleItem()" class="mt-3 w-full bg-indigo-600 text-white font-bold py-2 rounded-lg text-sm">הוסף לבנק</button>
              </div>
--            <div id="scheduleContainer" class="space-y-4"></div>
-         </section>
+         
+             <!-- לוח הגרירה -->
+             <div class="flex flex-col gap-4">
+                 <div id="bank" class="bg-slate-100 p-4 rounded-2xl border-2 border-slate-200" ondrop="drop(event)" ondragover="allowDrop(event)">
+-                    <h3 class="font-bold mb-3 text-slate-700 text-center">בנק פעילויות (גרור מכאן לריבועים למטה)</h3>
+-                    
+-                    <div id="activity-bank" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2">
+-                        </div>
++                    <div class="flex justify-between items-center mb-3">
++                        <h3 class="font-bold text-slate-700">🏦 בנק פעילויות</h3>
++                        <span class="text-xs text-slate-400 hidden sm:block">גרור מכאן לריבועים למטה • במובייל — לחץ על כפתור השיבוץ</span>
++                        <span id="bank-badge" class="bg-slate-300 text-slate-700 text-xs font-bold px-2 py-0.5 rounded-full">0</span>
++                    </div>
++                    <div id="activity-bank" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2 min-h-[60px]">
++                        <div class="col-span-full text-center text-slate-400 text-xs py-4 empty-hint">אין פעילויות בבנק — הוסיפו למעלה</div>
++                    </div>
+                 </div>
+                 
+                 <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+-                    <div id="col-friday-night" class="bg-blue-50 p-4 rounded-2xl min-h-[200px] border-2 border-dashed border-blue-200" ondrop="drop(event)" ondragover="allowDrop(event)">
+-                        <h3 class="font-bold mb-3 text-blue-800 text-center">כניסת שבת</h3>
++                    <div id="col-friday-night" class="bg-indigo-50 p-4 rounded-2xl min-h-[220px] border-2 border-dashed border-indigo-200" ondrop="drop(event)" ondragover="allowDrop(event)">
++                        <div class="flex justify-between items-center mb-3">
++                            <h3 class="font-bold text-indigo-800">🕯️ כניסת שבת</h3>
++                            <span id="badge-col-friday-night" class="bg-indigo-200 text-indigo-800 text-xs font-bold px-2 py-0.5 rounded-full hidden">0</span>
++                        </div>
++                        <p class="col-empty-hint text-xs text-indigo-300 text-center mt-6">גרור פעילות לכאן</p>
+                     </div>
+-                    <div id="col-friday-evening" class="bg-blue-50 p-4 rounded-2xl min-h-[200px] border-2 border-dashed border-blue-200" ondrop="drop(event)" ondragover="allowDrop(event)">
+-                        <h3 class="font-bold mb-3 text-blue-800 text-center">ערב שבת</h3>
++                    <div id="col-friday-evening" class="bg-purple-50 p-4 rounded-2xl min-h-[220px] border-2 border-dashed border-purple-200" ondrop="drop(event)" ondragover="allowDrop(event)">
++                        <div class="flex justify-between items-center mb-3">
++                            <h3 class="font-bold text-purple-800">🍷 ערב שבת</h3>
++                            <span id="badge-col-friday-evening" class="bg-purple-200 text-purple-800 text-xs font-bold px-2 py-0.5 rounded-full hidden">0</span>
++                        </div>
++                        <p class="col-empty-hint text-xs text-purple-300 text-center mt-6">גרור פעילות לכאן</p>
+                     </div>
+-                    <div id="col-saturday-lunch" class="bg-blue-50 p-4 rounded-2xl min-h-[200px] border-2 border-dashed border-blue-200" ondrop="drop(event)" ondragover="allowDrop(event)">
+-                        <h3 class="font-bold mb-3 text-blue-800 text-center">צהריים</h3>
++                    <div id="col-saturday-lunch" class="bg-amber-50 p-4 rounded-2xl min-h-[220px] border-2 border-dashed border-amber-200" ondrop="drop(event)" ondragover="allowDrop(event)">
++                        <div class="flex justify-between items-center mb-3">
++                            <h3 class="font-bold text-amber-800">☀️ צהריים שבת</h3>
++                            <span id="badge-col-saturday-lunch" class="bg-amber-200 text-amber-800 text-xs font-bold px-2 py-0.5 rounded-full hidden">0</span>
++                        </div>
++                        <p class="col-empty-hint text-xs text-amber-300 text-center mt-6">גרור פעילות לכאן</p>
+                     </div>
+-                    <div id="col-third-meal" class="bg-blue-50 p-4 rounded-2xl min-h-[200px] border-2 border-dashed border-blue-200" ondrop="drop(event)" ondragover="allowDrop(event)">
+-                        <h3 class="font-bold mb-3 text-blue-800 text-center">סעודה שלישית</h3>
++                    <div id="col-third-meal" class="bg-emerald-50 p-4 rounded-2xl min-h-[220px] border-2 border-dashed border-emerald-200" ondrop="drop(event)" ondragover="allowDrop(event)">
++                        <div class="flex justify-between items-center mb-3">
++                            <h3 class="font-bold text-emerald-800">🥧 סעודה שלישית</h3>
++                            <span id="badge-col-third-meal" class="bg-emerald-200 text-emerald-800 text-xs font-bold px-2 py-0.5 rounded-full hidden">0</span>
++                        </div>
++                        <p class="col-empty-hint text-xs text-emerald-300 text-center mt-6">גרור פעילות לכאן</p>
+                     </div>
+                 </div>
+             </div>
+@@ -760,6 +818,65 @@ const firebaseConfig = {
+     <script src="js/app.js"></script>
+     <script src="js/ui.js"></script>
  
-         <!-- TAB: SETTINGS -->
-diff --git a/js/api.js b/js/api.js
-index d0cb49c..3df11de 100644
---- a/js/api.js
-+++ b/js/api.js
-@@ -106,11 +106,14 @@ function startFirebaseListeners() {
-         snapshot.forEach(doc => cloudSchedule.push(doc.data()));
-         schedule = cloudSchedule;
-         localStorage.setItem('bm_schedule', JSON.stringify(schedule));
--        if (currentTab === 'schedule') renderSchedule();
-+        
-+        // זה יקרה אוטומטית בכל פעם שיש שינוי בענן, 
-+        // וזה יחליף את כל התצוגה בלי כפילויות
-+        if (document.getElementById('content-schedule')) renderSchedule(); 
-     }, error => {
-         handleFirestoreError(error, "לו\"ז");
-     });
--
-+    
-     // Menu snapshot
-     const menuRef = getCollectionRef('menu');
-     menuRef.onSnapshot(snapshot => {
++
++    <!-- MOBILE BOTTOM NAV -->
++    <nav class="sm:hidden fixed bottom-0 right-0 left-0 bg-white border-t border-slate-200 shadow-xl z-40 flex justify-around items-center px-1 py-1" style="padding-bottom: env(safe-area-inset-bottom);">
++        <button onclick="switchTab('tasks')" id="mob-tab-tasks" class="mob-tab-btn flex flex-col items-center gap-0.5 py-2 px-3 rounded-xl text-indigo-600 font-bold flex-1">
++            <span class="text-xl">📅</span>
++            <span class="text-[10px] font-semibold">משימות</span>
++        </button>
++        <button onclick="switchTab('rsvp')" id="mob-tab-rsvp" class="mob-tab-btn flex flex-col items-center gap-0.5 py-2 px-3 rounded-xl text-slate-400 flex-1">
++            <span class="text-xl">👥</span>
++            <span class="text-[10px] font-semibold">אורחים</span>
++        </button>
++        <button onclick="switchTab('shopping')" id="mob-tab-shopping" class="mob-tab-btn flex flex-col items-center gap-0.5 py-2 px-3 rounded-xl text-slate-400 flex-1">
++            <span class="text-xl">🛒</span>
++            <span class="text-[10px] font-semibold">קניות</span>
++        </button>
++        <button onclick="switchTab('budget')" id="mob-tab-budget" class="mob-tab-btn flex flex-col items-center gap-0.5 py-2 px-3 rounded-xl text-slate-400 flex-1">
++            <span class="text-xl">💰</span>
++            <span class="text-[10px] font-semibold">תקציב</span>
++        </button>
++        <button onclick="toggleMoreMenu()" id="mob-tab-more" class="mob-tab-btn flex flex-col items-center gap-0.5 py-2 px-3 rounded-xl text-slate-400 flex-1">
++            <span class="text-xl">☰</span>
++            <span class="text-[10px] font-semibold">עוד</span>
++        </button>
++    </nav>
++
++    <!-- MOBILE MORE MENU -->
++    <div id="moreMenu" class="sm:hidden hidden fixed bottom-16 right-0 left-0 bg-white border-t border-slate-200 shadow-2xl z-40 rounded-t-2xl p-4 grid grid-cols-3 gap-3" style="padding-bottom: env(safe-area-inset-bottom);">
++        <button onclick="switchTab('calls'); toggleMoreMenu()" class="flex flex-col items-center gap-1 py-3 px-2 rounded-xl bg-slate-50 border border-slate-100 text-slate-600 font-semibold">
++            <span class="text-2xl">📞</span>
++            <span class="text-xs">בירורים</span>
++        </button>
++        <button onclick="switchTab('rooms'); toggleMoreMenu()" class="flex flex-col items-center gap-1 py-3 px-2 rounded-xl bg-slate-50 border border-slate-100 text-slate-600 font-semibold">
++            <span class="text-2xl">🏨</span>
++            <span class="text-xs">חדרים</span>
++        </button>
++        <button onclick="switchTab('logistics'); toggleMoreMenu()" class="flex flex-col items-center gap-1 py-3 px-2 rounded-xl bg-slate-50 border border-slate-100 text-slate-600 font-semibold">
++            <span class="text-2xl">📦</span>
++            <span class="text-xs">ציוד</span>
++        </button>
++        <button onclick="switchTab('menu'); toggleMoreMenu()" class="flex flex-col items-center gap-1 py-3 px-2 rounded-xl bg-slate-50 border border-slate-100 text-slate-600 font-semibold">
++            <span class="text-2xl">🍽️</span>
++            <span class="text-xs">תפריט</span>
++        </button>
++        <button onclick="switchTab('schedule'); toggleMoreMenu()" class="flex flex-col items-center gap-1 py-3 px-2 rounded-xl bg-slate-50 border border-slate-100 text-slate-600 font-semibold">
++            <span class="text-2xl">🕒</span>
++            <span class="text-xs">לו"ז</span>
++        </button>
++        <button onclick="switchTab('recent'); toggleMoreMenu()" class="flex flex-col items-center gap-1 py-3 px-2 rounded-xl bg-slate-50 border border-slate-100 text-slate-600 font-semibold">
++            <span class="text-2xl">⏱️</span>
++            <span class="text-xs">חדשות</span>
++        </button>
++        <button onclick="switchTab('settings'); toggleMoreMenu()" class="flex flex-col items-center gap-1 py-3 px-2 rounded-xl bg-slate-50 border border-slate-100 text-slate-600 font-semibold col-span-3">
++            <span class="text-2xl">⚙️</span>
++            <span class="text-xs">הגדרות</span>
++        </button>
++    </div>
++    <!-- MORE MENU BACKDROP -->
++    <div id="moreMenuBackdrop" class="sm:hidden hidden fixed inset-0 bg-black/30 z-30" onclick="toggleMoreMenu()"></div>
++
+ </body>
+ </html>
+ 
 diff --git a/js/app.js b/js/app.js
-index 4801cd9..5a3e46d 100644
+index 5a3e46d..b1d55be 100644
 --- a/js/app.js
 +++ b/js/app.js
-@@ -966,23 +966,21 @@ function saveEditMenu(id) {
+@@ -263,6 +263,7 @@ async function addNewRsvp() {
+ }
  
- async function addNewScheduleItem() {
-     const titleEl = document.getElementById('schTitle');
--    const dayEl = document.getElementById('schDay');
--    const timeEl = document.getElementById('schTime');
-     const speakerEl = document.getElementById('schSpeaker');
--    const overlapEl = document.getElementById('schOverlap');
+ async function deleteRsvp(guestId) {
++    if (!confirm("למחוק את רישום האורח לצמיתות?")) return;
+     // Immediate local update
+     rsvps = rsvps.filter(g => g.id !== guestId);
+     saveLocalState();
+@@ -395,6 +396,7 @@ async function updateTaskStatus(taskId, newStatus) {
+ }
  
--    if (!titleEl.value.trim() || !timeEl.value) {
--        alert("נא להזין שם פעילות ושעה!");
-+    // בדיקה מעודכנת לפי השדות החדשים ב-HTML
-+    if (!titleEl.value.trim()) {
-+        alert("נא להזין שם פעילות!");
-         return;
+ async function deleteTask(taskId) {
++    if (!confirm("למחוק את המשימה לצמיתות?")) return;
+     tasks = tasks.filter(t => t.id !== taskId);
+     saveLocalState();
+     renderTasks();
+@@ -511,6 +513,7 @@ async function toggleShopItem(itemId) {
+ }
+ 
+ async function deleteShopItem(itemId) {
++    if (!confirm("למחוק את הפריט מרשימת הקניות?")) return;
+     shopping = shopping.filter(s => s.id !== itemId);
+     saveLocalState();
+     renderShopping();
+@@ -607,6 +610,7 @@ async function addNewRoom() {
+ 
+ // Delete Room (Fixed and Robustified)
+ async function deleteRoom(roomId) {
++    if (!confirm("למחוק את החדר לצמיתות?")) return;
+     rooms = rooms.filter(r => r.id !== roomId);
+     saveLocalState();
+     renderRooms();
+@@ -647,6 +651,7 @@ async function updateCallNotes(callId, notesText) {
+ 
+ // Delete Call card
+ async function deleteCall(callId) {
++    if (!confirm("למחוק את הבירור לצמיתות?")) return;
+     calls = calls.filter(c => c.id !== callId);
+     saveLocalState();
+     renderCalls();
+@@ -737,6 +742,7 @@ async function toggleExpensePaid(expId) {
+ }
+ 
+ async function deleteExpense(expId) {
++    if (!confirm("למחוק את ההוצאה לצמיתות?")) return;
+     budget = budget.filter(e => e.id !== expId);
+     saveLocalState();
+     renderBudget();
+@@ -970,8 +976,7 @@ async function addNewScheduleItem() {
+ 
+     // בדיקה מעודכנת לפי השדות החדשים ב-HTML
+     if (!titleEl.value.trim()) {
+-        alert("נא להזין שם פעילות!");
+-        return;
++        showToast("נא להזין שם פעילות!"); return;
      }
  
      const item = {
-         id: 'sch_' + Date.now(),
-         title: titleEl.value.trim(),
--        day: dayEl.value,
--        time: timeEl.value,
--        speaker: speakerEl.value.trim(),
--        overlap: overlapEl ? overlapEl.checked : false
-+        speaker: speakerEl.value ? speakerEl.value.trim() : "",
-+        day: "",      // שדה ריק כי הגרירה תקבע את היום
-+        time: "",     // שדה ריק כי הגרירה תקבע את השעה
-+        overlap: false
-     };
-     
-     // 1. הוספה למערך המקומי
-@@ -991,23 +989,22 @@ async function addNewScheduleItem() {
-     // 2. שמירה מקומית (LocalStorage)
-     saveLocalState();
-     
--    // 3. רינדור למסך
-+    // 3. רינדור למסך (הפונקציה הזו תצייר את הפעילות בבנק)
-     renderSchedule();
- 
--    // 4. הוספה לענן (Firebase) - זה היה חסר!
-+    // 4. הוספה לענן (Firebase)
-     if (isCloudConnected && db) {
--        dbSet('schedule', item.id, item); // השתמשנו ב-item.id ולא ב-id לא קיים
-+        dbSet('schedule', item.id, item);
+@@ -1139,5 +1144,8 @@ window.onload = function() {
      }
-     
-     // ניקוי שדות
-     titleEl.value = "";
--    timeEl.value = "";
-     speakerEl.value = "";
--    if (overlapEl) overlapEl.checked = false;
-     
--    showToast("הפעילות נוספה בהצלחה!");
-+    showToast("הפעילות נוספה לבנק בהצלחה!");
- }
  
-+
- async function deleteScheduleItem(id) {
-     // 1. מחיקה מהמערך המקומי
-     schedule = schedule.filter(s => s.id !== id);
+     populateTimeOptions();
++    
++    // Fallback: hide loading overlay after 2.5 seconds even if Firebase didn't connect
++    setTimeout(hideLoadingOverlay, 2500);
+ };
+ 
 diff --git a/js/ui.js b/js/ui.js
-index 60520ee..8072245 100644
+index 67b60c8..0edfcb7 100644
 --- a/js/ui.js
 +++ b/js/ui.js
-@@ -630,39 +630,32 @@ function renderMenu() {
+@@ -193,6 +193,14 @@ function renderTasks() {
+         }
+     });
+ 
++    // Hide empty category boxes
++    ['overdue', 'today', 'thisweek', 'future'].forEach(cat => {
++        const box = document.getElementById('box-' + cat);
++        if (box) {
++            box.classList.toggle('hidden', countMap[cat] === 0);
++        }
++    });
++
+     calculateStats();
+ }
+ 
+@@ -302,6 +310,33 @@ function renderRsvps() {
+         tbody.insertAdjacentHTML('beforeend', rowHtml);
+     });
+ 
++    // Mobile Cards
++    const cardsBody = document.getElementById('rsvpCardsBody');
++    if (cardsBody) {
++        cardsBody.innerHTML = "";
++        rsvps.forEach(g => {
++            const size = g.adults + g.kids;
++            const mealsText = [];
++            if (g.meals.includes('friday')) mealsText.push('🍷 ערב שבת');
++            if (g.meals.includes('saturday')) mealsText.push('⛪ בוקר');
++            if (g.meals.includes('third')) mealsText.push('🥧 שלישית');
++            cardsBody.insertAdjacentHTML('beforeend', `
++                <div class="p-4 flex justify-between items-start gap-2">
++                    <div class="flex-1">
++                        <div class="font-bold text-slate-800 text-sm">${g.name}</div>
++                        <div class="text-xs text-slate-500 mt-1 flex flex-wrap gap-2">
++                            <span>👨‍🦳 ${g.adults} מבוגרים</span>
++                            <span>👶 ${g.kids} ילדים</span>
++                            <span>${g.sleep === 'yes' ? '🏡 נשאר' : '🚗 לא נשאר'}</span>
++                        </div>
++                        <div class="text-xs text-indigo-600 font-semibold mt-1">${mealsText.join(' · ') || 'ללא ארוחות'}</div>
++                    </div>
++                    <button onclick="deleteRsvp('${g.id}')" class="text-slate-300 hover:text-red-500 transition font-bold text-lg leading-none">✕</button>
++                </div>
++            `);
++        });
++    }
++
+     // Update stats
+     safeSetText('rsvpTotalCount', totalCount);
+     safeSetText('rsvpSubtotals', `${totalAdults} מבוגרים | ${totalKids} ילדים`);
+@@ -346,7 +381,9 @@ function renderShopping() {
+         `;
+         container.insertAdjacentHTML('beforeend', categorySectionHtml);
+ 
+-        catItems.forEach(item => {
++        // Sort: unbought first, bought last
++        const sortedItems = [...catItems].sort((a, b) => (a.bought ? 1 : 0) - (b.bought ? 1 : 0));
++        sortedItems.forEach(item => {
+             const itemHtml = `
+                 <div class="p-4 flex justify-between items-center hover:bg-slate-50 transition">
+                     <label class="flex items-center gap-3 cursor-pointer select-none flex-1">
+@@ -379,6 +416,19 @@ function renderRooms() {
+         return;
+     }
+ 
++    // Show overall occupancy summary
++    const totalBeds = rooms.reduce((sum, r) => sum + (parseInt(r.capacity) || 0), 0);
++    const totalOccupied = rooms.reduce((sum, r) => sum + (r.guests ? r.guests.length : 0), 0);
++    const summaryEl = document.getElementById('roomsSummary');
++    if (summaryEl) {
++        summaryEl.innerHTML = `
++            <div class="bg-purple-50 border border-purple-100 rounded-xl px-4 py-3 flex items-center justify-between mb-4">
++                <span class="text-sm font-bold text-purple-900">🏨 סיכום תפוסה כוללת בוילה</span>
++                <span class="text-sm font-extrabold text-purple-700">${totalOccupied} מתוך ${totalBeds} מיטות תפוסות</span>
++            </div>
++        `;
++    }
++
+     rooms.forEach(room => {
+         const currentGuests = room.guests || [];
+         const occupiedCount = currentGuests.length;
+@@ -455,7 +505,7 @@ function renderCalls() {
+                     
+                     <div class="mt-3">
+                         <label class="text-[10px] text-slate-400 font-bold block mb-1">הערות וסיכום:</label>
+-                        <textarea onchange="updateCallNotes('${call.id}', this.value)" placeholder="הקלידו כאן מידע חשוב..." class="w-full p-2.5 border border-slate-200 rounded-xl text-xs focus:ring-1 focus:ring-indigo-500 focus:outline-none bg-slate-50" rows="3">${call.notes || ''}</textarea>
++                        <textarea onblur="updateCallNotes('${call.id}', this.value)" placeholder="הקלידו כאן מידע חשוב..." class="w-full p-2.5 border border-slate-200 rounded-xl text-xs focus:ring-1 focus:ring-indigo-500 focus:outline-none bg-slate-50" rows="3">${call.notes || ''}</textarea>
+                     </div>
+                 </div>
+                 <div class="flex justify-end border-t border-slate-50 pt-2">
+@@ -475,6 +525,12 @@ function renderBudget() {
+     const container = document.getElementById('budgetListContainer');
+     if (!container) return;
+     container.innerHTML = "";
++    // Sync max budget input with saved value
++    const maxInput = document.getElementById('maxBudgetInput');
++    const maxDisplay = document.getElementById('budgetMaxDisplay');
++    const savedMax = typeof maxBudget !== "undefined" ? maxBudget : 33000;
++    if (maxInput) maxInput.value = savedMax;
++    if (maxDisplay) maxDisplay.textContent = savedMax.toLocaleString() + ' ₪';
+ 
+     let totalExpenses = 0;
+     let totalPaid = 0;
+@@ -529,13 +585,13 @@ function renderBudget() {
+     safeSetText('budgetTotalExpenses', `${totalExpenses.toLocaleString()} ₪`);
+     safeSetText('budgetTotalPaid', `${totalPaid.toLocaleString()} ₪`);
+ 
+-    const maxBudget = 33000;
++    const currentMax = typeof maxBudget !== "undefined" ? maxBudget : 33000;
+     // כאן התיקון: חישוב האחוזים לפי הסכום הכולל (totalExpenses)
+-    const progressPercent = Math.min(100, Math.round((totalExpenses / maxBudget) * 100));
++    const progressPercent = Math.min(100, Math.round((totalExpenses / currentMax) * 100));
+     
+     safeSetText('budgetProgressPercent', `${progressPercent}% מנוצל`);
+     
+-    const remaining = maxBudget - totalExpenses;
++    const remaining = currentMax - totalExpenses;
+     safeSetText('budgetRemainingAmount', remaining >= 0 ? `נותר: ${remaining.toLocaleString()} ₪` : `חריגה: ${Math.abs(remaining).toLocaleString()} ₪`);
+ 
+     // עדכון ה-Progress Bar הוויזואלי
+@@ -630,34 +686,173 @@ function renderMenu() {
  }
  
  function renderSchedule() {
--    const container = document.getElementById('scheduleContainer');
--    container.innerHTML = "";
--    
--    schedule.sort((a, b) => {
--        const dayOrder = { 'שישי': 1, 'שבת': 2 };
--        return (dayOrder[a.day] - dayOrder[b.day]) || a.time.localeCompare(b.time);
-+    // 1. ניקוי המיכלים (מבלי למחוק את הכותרות)
-+    document.getElementById('activity-bank').innerHTML = "";
-+    document.querySelectorAll('[id^="col-"]').forEach(col => {
-+        // מוחקים רק את האלמנטים שהם פעילויות ולא את כותרת הריבוע
-+        const items = col.querySelectorAll('[id^="act_"]');
-+        items.forEach(i => i.remove());
-     });
--
-+    
-+    // 2. רינדור מחדש
-     schedule.forEach(item => {
--        if (editingScheduleId === item.id) {
--            // תצוגת עריכה
--            container.insertAdjacentHTML('beforeend', `
--                <div class="bg-indigo-50 p-4 rounded-xl border border-indigo-200 shadow-sm space-y-2">
--                    <input type="text" id="editSchTitle" value="${item.title}" class="w-full p-1 border rounded text-sm">
--                    <div class="grid grid-cols-2 gap-2">
--                        <select id="editSchDay"><option value="שישי" ${item.day==='שישי'?'selected':''}>שישי</option><option value="שבת" ${item.day==='שבת'?'selected':''}>שבת</option></select>
--                        <input type="time" id="editSchTime" value="${item.time}" class="p-1 border rounded text-sm">
--                    </div>
--                    <input type="text" id="editSchSpeaker" value="${item.speaker}" class="w-full p-1 border rounded text-sm">
--                    <button onclick="saveEditSchedule('${item.id}')" class="bg-indigo-600 text-white w-full py-1 rounded text-xs font-bold">שמור</button>
--                </div>
--            `);
--        } else {
--            // תצוגה רגילה
--            container.insertAdjacentHTML('beforeend', `
--                <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex justify-between items-center cursor-pointer" onclick="editScheduleItem('${item.id}')">
--                    <div>
--                        <div class="font-bold text-sm text-indigo-950">${item.title}</div>
--                        <div class="text-[11px] text-slate-600">${item.day} | ⏰ ${item.time} | 👤 ${item.speaker || 'ללא'}</div>
--                    </div>
--                    <button onclick="deleteScheduleItem('${item.id}')" class="text-red-400 hover:text-red-600 font-bold px-2">✕</button>
--                </div>
--            `);
-+        // יצירת האלמנט
-+        const itemHtml = `
-+            <div id="act_${item.id}" draggable="true" ondragstart="drag(event)" 
-+                 class="w-40 min-h-[120px] bg-white p-3 rounded-lg shadow cursor-move text-sm font-semibold border-r-4 border-indigo-500 flex flex-col justify-between overflow-hidden">
-+                <div class="font-bold leading-tight break-words">${item.title}</div>
-+                ${item.speaker ? `<div class="text-[10px] text-slate-500 mt-1">👤 ${item.speaker}</div>` : ''}
-+                <button onclick="deleteScheduleItem('${item.id}')" class="text-red-400 text-[10px] underline self-start mt-2">מחק</button>
-+            </div>
-+        `;
+-    // 1. ניקוי המיכלים (מבלי למחוק את הכותרות)
+-    document.getElementById('activity-bank').innerHTML = "";
++    const colColors = {
++        'col-friday-night':  { border: 'border-indigo-400', bg: 'bg-indigo-50' },
++        'col-friday-evening': { border: 'border-purple-400', bg: 'bg-purple-50' },
++        'col-saturday-lunch': { border: 'border-amber-400',  bg: 'bg-amber-50'  },
++        'col-third-meal':     { border: 'border-emerald-400', bg: 'bg-emerald-50' },
++        'bank':               { border: 'border-slate-400',  bg: 'bg-white'     }
++    };
 +
-+        // 3. לוגיקה בטוחה: אם אין location, שים בבנק
-+        const targetId = (item.location && document.getElementById(item.location)) ? item.location : 'bank';
-+        const targetContainer = document.getElementById(targetId === 'bank' ? 'activity-bank' : targetId);
-+        
-+        if (targetContainer) {
-+            targetContainer.insertAdjacentHTML('beforeend', itemHtml);
++    // 1. ניקוי
++    const bankEl = document.getElementById('activity-bank');
++    if (bankEl) bankEl.innerHTML = "";
+     document.querySelectorAll('[id^="col-"]').forEach(col => {
+-        // מוחקים רק את האלמנטים שהם פעילויות ולא את כותרת הריבוע
+-        const items = col.querySelectorAll('[id^="act_"]');
+-        items.forEach(i => i.remove());
++        col.querySelectorAll('[id^="act_"]').forEach(i => i.remove());
+     });
+-    
+-    // 2. רינדור מחדש
++
++    // 2. ספירת פעילויות לכל עמודה
++    const colCount = {};
++    schedule.forEach(item => {
++        const loc = (item.location && document.getElementById(item.location)) ? item.location : 'bank';
++        colCount[loc] = (colCount[loc] || 0) + 1;
++    });
++
++    // 3. עדכון badges
++    ['col-friday-night','col-friday-evening','col-saturday-lunch','col-third-meal'].forEach(colId => {
++        const badge = document.getElementById('badge-' + colId);
++        if (badge) {
++            const count = colCount[colId] || 0;
++            badge.textContent = count;
++            badge.classList.toggle('hidden', count === 0);
++        }
++    });
++    const bankBadge = document.getElementById('bank-badge');
++    if (bankBadge) bankBadge.textContent = colCount['bank'] || 0;
++
++    // 4. רינדור כרטיסיות
++    const cols = ['col-friday-night','col-friday-evening','col-saturday-lunch','col-third-meal'];
++    const colLabels = {
++        'col-friday-night': 'כניסת שבת',
++        'col-friday-evening': 'ערב שבת',
++        'col-saturday-lunch': 'צהריים שבת',
++        'col-third-meal': 'סעודה שלישית'
++    };
++
+     schedule.forEach(item => {
+-        // יצירת האלמנט
++        const loc = (item.location && document.getElementById(item.location)) ? item.location : 'bank';
++        const colors = colColors[loc] || colColors['bank'];
++
++        // כפתורי שיבוץ למובייל
++        const assignBtns = loc === 'bank' ? cols.map(cid => `
++            <button onclick="assignActivity('${item.id}', '${cid}')" 
++                class="text-[10px] bg-slate-100 hover:bg-indigo-100 text-slate-600 hover:text-indigo-700 px-2 py-0.5 rounded-full transition font-semibold">
++                → ${colLabels[cid]}
++            </button>`).join('') : `
++            <button onclick="assignActivity('${item.id}', 'bank')" 
++                class="text-[10px] bg-slate-100 hover:bg-amber-100 text-slate-500 hover:text-amber-700 px-2 py-0.5 rounded-full transition font-semibold">
++                ↩ החזר לבנק
++            </button>`;
++
+         const itemHtml = `
+-            <div id="act_${item.id}" draggable="true" ondragstart="drag(event)" 
+-                 class="w-40 min-h-[120px] bg-white p-3 rounded-lg shadow cursor-move text-sm font-semibold border-r-4 border-indigo-500 flex flex-col justify-between overflow-hidden">
+-                <div class="font-bold leading-tight break-words">${item.title}</div>
+-                ${item.speaker ? `<div class="text-[10px] text-slate-500 mt-1">👤 ${item.speaker}</div>` : ''}
+-                <button onclick="deleteScheduleItem('${item.id}')" class="text-red-400 text-[10px] underline self-start mt-2">מחק</button>
++            <div id="act_${item.id}" draggable="true" ondragstart="drag(event)"
++                 class="bg-white p-3 rounded-xl shadow-sm cursor-move text-sm font-semibold border-r-4 ${colors.border} flex flex-col gap-1.5 overflow-hidden hover:shadow-md transition">
++                <div class="font-bold leading-tight break-words text-slate-800">${item.title}</div>
++                ${item.speaker ? `<div class="text-[10px] text-slate-500 flex items-center gap-1">👤 ${item.speaker}</div>` : ''}
++                ${item.time ? `<div class="text-[10px] text-indigo-600 font-bold">🕐 ${item.time}</div>` : ''}
++                <div class="flex flex-wrap gap-1 mt-1 sm:hidden">${assignBtns}</div>
++                <div class="flex flex-wrap gap-1 mt-1 hidden sm:flex">${assignBtns}</div>
++                <button onclick="deleteScheduleItem('${item.id}')" class="text-red-300 hover:text-red-500 text-[10px] self-start transition">🗑️ מחק</button>
+             </div>
+         `;
+ 
+-        // 3. לוגיקה בטוחה: אם אין location, שים בבנק
+-        const targetId = (item.location && document.getElementById(item.location)) ? item.location : 'bank';
+-        const targetContainer = document.getElementById(targetId === 'bank' ? 'activity-bank' : targetId);
+-        
++        const targetContainer = document.getElementById(loc === 'bank' ? 'activity-bank' : loc);
+         if (targetContainer) {
++            // הסר hint ריק אם קיים
++            const hint = targetContainer.querySelector('.empty-hint, .col-empty-hint');
++            if (hint) hint.remove();
+             targetContainer.insertAdjacentHTML('beforeend', itemHtml);
          }
      });
- }
-@@ -815,3 +808,46 @@ function generateLogisticsSummary() {
-     document.getElementById('logSummaryModal').classList.remove('hidden');
- }
- 
-+function allowDrop(ev) {
-+    ev.preventDefault();
-+}
 +
-+function drag(ev) {
-+    ev.dataTransfer.setData("text", ev.target.id);
-+}
-+
-+async function drop(ev) {
-+    ev.preventDefault();
-+    const data = ev.dataTransfer.getData("text");
-+    const draggedElement = document.getElementById(data);
-+    let target = ev.target;
-+    
-+    // מציאת הריבוע (קונטיינר) אליו גררנו
-+    while (target && !target.id.startsWith('col-') && target.id !== 'bank') {
-+        target = target.parentElement;
-+    }
-+    
-+    if (target) {
-+        // 1. העברה ויזואלית מיידית (לפני הכל!)
-+        target.appendChild(draggedElement);
-+        
-+        // 2. עדכון הנתונים
-+        const activityId = data.replace('act_', '');
-+        const task = schedule.find(s => s.id === activityId);
-+        
-+        if (task) {
-+            const newLocation = target.id;
-+            task.location = newLocation;
-+            saveLocalState();
-+            
-+            // 3. עדכון ענן
-+            if (isCloudConnected && db) {
-+                dbUpdate('schedule', activityId, { location: newLocation });
++    // 5. הצג hint בעמודות ריקות
++    cols.forEach(colId => {
++        const col = document.getElementById(colId);
++        if (col && !col.querySelector('[id^="act_"]')) {
++            const existing = col.querySelector('.col-empty-hint');
++            if (!existing) {
++                col.insertAdjacentHTML('beforeend', `<p class="col-empty-hint text-xs text-slate-300 text-center mt-6">גרור פעילות לכאן</p>`);
 +            }
 +        }
-+        showToast("הפעילות שובצה!");
++    });
++    if (bankEl && !bankEl.querySelector('[id^="act_"]')) {
++        bankEl.innerHTML = `<div class="col-span-full text-center text-slate-400 text-xs py-4 empty-hint">אין פעילויות בבנק — הוסיפו למעלה</div>`;
 +    }
 +}
 +
++function assignActivity(activityId, targetColId) {
++    const item = schedule.find(s => s.id === activityId);
++    if (!item) return;
++    item.location = targetColId;
++    saveLocalState();
++    renderSchedule();
++    if (isCloudConnected && db) {
++        dbUpdate('schedule', activityId, { location: targetColId });
++    }
++    showToast("הפעילות שובצה! ✅");
++}
 +
++function showScheduleSummary() {
++    const modal = document.getElementById('scheduleSummaryModal');
++    const content = document.getElementById('scheduleSummaryContent');
++    if (!modal || !content) return;
 +
++    const cols = [
++        { id: 'col-friday-night',   label: '🕯️ כניסת שבת' },
++        { id: 'col-friday-evening', label: '🍷 ערב שבת' },
++        { id: 'col-saturday-lunch', label: '☀️ צהריים שבת' },
++        { id: 'col-third-meal',     label: '🥧 סעודה שלישית' },
++        { id: 'bank',               label: '🏦 בנק (לא שובץ)' }
++    ];
++
++    content.innerHTML = cols.map(col => {
++        const items = schedule.filter(s => {
++            const loc = (s.location && document.getElementById(s.location)) ? s.location : 'bank';
++            return loc === col.id;
++        });
++        if (items.length === 0) return '';
++        return `
++            <div class="bg-slate-50 rounded-xl p-3 border border-slate-100">
++                <h4 class="font-extrabold text-slate-800 mb-2">${col.label}</h4>
++                <div class="space-y-1">
++                    ${items.map(i => `
++                        <div class="flex items-center gap-2 text-xs text-slate-700">
++                            ${i.time ? `<span class="font-bold text-indigo-600 w-10">${i.time}</span>` : '<span class="w-10"></span>'}
++                            <span class="font-semibold">${i.title}</span>
++                            ${i.speaker ? `<span class="text-slate-400">— ${i.speaker}</span>` : ''}
++                        </div>
++                    `).join('')}
++                </div>
++            </div>
++        `;
++    }).join('');
++
++    modal.classList.remove('hidden');
++}
++
++function copyScheduleSummary() {
++    const cols = [
++        { id: 'col-friday-night',   label: '🕯️ כניסת שבת' },
++        { id: 'col-friday-evening', label: '🍷 ערב שבת' },
++        { id: 'col-saturday-lunch', label: '☀️ צהריים שבת' },
++        { id: 'col-third-meal',     label: '🥧 סעודה שלישית' }
++    ];
++    let text = "📋 לו\"ז שבת בר המצווה — אמיתי\n\n";
++    cols.forEach(col => {
++        const items = schedule.filter(s => {
++            const loc = (s.location && document.getElementById(s.location)) ? s.location : 'bank';
++            return loc === col.id;
++        });
++        if (items.length === 0) return;
++        text += `${col.label}\n`;
++        items.forEach(i => {
++            text += `  ${i.time ? i.time + ' ' : ''}${i.title}${i.speaker ? ' — ' + i.speaker : ''}\n`;
++        });
++        text += '\n';
++    });
++    if (navigator.clipboard) {
++        navigator.clipboard.writeText(text).then(() => showToast("הלו\"ז הועתק! 📋"));
++    }
+ }
+ 
+ function switchTab(tabId) {
+@@ -693,12 +888,31 @@ function switchTab(tabId) {
+     else if (tabId === 'rsvp') renderRsvps();
+     else if (tabId === 'shopping') renderShopping();
+     else if (tabId === 'rooms') renderRooms();
+-    else if (tabId === 'menu') renderMenu(); // הוספנו את זה
++    else if (tabId === 'menu') renderMenu();
+     else if (tabId === 'budget') renderBudget();
+     else if (tabId === 'calls') renderCalls();
+-    else if (tabId === 'schedule') renderSchedule(); // הוספנו את זה
++    else if (tabId === 'schedule') renderSchedule();
+     else if (tabId === 'recent') renderRecentTasks();
+     else if (tabId === 'logistics') renderLogistics();
++
++    // עדכון ניווט תחתון במובייל
++    const mobTabs = ['tasks', 'rsvp', 'shopping', 'budget'];
++    mobTabs.forEach(id => {
++        const btn = document.getElementById('mob-tab-' + id);
++        if (btn) {
++            btn.className = id === tabId
++                ? 'mob-tab-btn flex flex-col items-center gap-0.5 py-2 px-3 rounded-xl text-indigo-600 font-bold flex-1'
++                : 'mob-tab-btn flex flex-col items-center gap-0.5 py-2 px-3 rounded-xl text-slate-400 flex-1';
++        }
++    });
++    // כפתור "עוד" נשאר פעיל אם הטאב הנבחר לא בניווט הראשי
++    const moreBtn = document.getElementById('mob-tab-more');
++    if (moreBtn) {
++        const isMainTab = mobTabs.includes(tabId);
++        moreBtn.className = !isMainTab
++            ? 'mob-tab-btn flex flex-col items-center gap-0.5 py-2 px-3 rounded-xl text-indigo-600 font-bold flex-1'
++            : 'mob-tab-btn flex flex-col items-center gap-0.5 py-2 px-3 rounded-xl text-slate-400 flex-1';
++    }
+ }
+ 
+ function closeToast() {
+@@ -712,7 +926,8 @@ function showToast(message) {
+         const msg = document.getElementById('toastMessage');
+         if (msg) msg.innerText = message;
+         toast.classList.remove('hidden');
+-        setTimeout(closeToast, 4000);
++        const duration = message.length > 50 ? 7000 : 4000;
++        setTimeout(closeToast, duration);
+     }
+ }
+ 
+@@ -780,9 +995,19 @@ function generateWhatsAppNotification() {
+ 
+ function copyToClipboard() {
+     const txt = document.getElementById('logSummaryText');
+-    txt.select();
+-    document.execCommand('copy');
+-    alert("הועתק ללוח!");
++    if (navigator.clipboard && navigator.clipboard.writeText) {
++        navigator.clipboard.writeText(txt.value).then(() => {
++            showToast("הועתק ללוח! 📋");
++        }).catch(() => {
++            txt.select();
++            document.execCommand('copy');
++            showToast("הועתק ללוח! 📋");
++        });
++    } else {
++        txt.select();
++        document.execCommand('copy');
++        showToast("הועתק ללוח! 📋");
++    }
+ }
+ 
+ function closeLogSummary() {
+@@ -819,7 +1044,6 @@ function drag(ev) {
+ async function drop(ev) {
+     ev.preventDefault();
+     const data = ev.dataTransfer.getData("text");
+-    const draggedElement = document.getElementById(data);
+     let target = ev.target;
+     
+     // מציאת הריבוע (קונטיינר) אליו גררנו
+@@ -828,26 +1052,85 @@ async function drop(ev) {
+     }
+     
+     if (target) {
+-        // 1. העברה ויזואלית מיידית (לפני הכל!)
+-        target.appendChild(draggedElement);
+-        
+-        // 2. עדכון הנתונים
++        // עדכון הנתונים
+         const activityId = data.replace('act_', '');
+         const task = schedule.find(s => s.id === activityId);
+         
+         if (task) {
+-            const newLocation = target.id;
++            // location: אם גררנו לבנק — שמור 'bank', אחרת שמור את id העמודה
++            const newLocation = target.id === 'bank' ? 'bank' : target.id;
+             task.location = newLocation;
+             saveLocalState();
+             
+-            // 3. עדכון ענן
++            // רינדור מחדש — מעדכן badges, hints וכפתורי שיבוץ
++            renderSchedule();
++            
++            // עדכון ענן
+             if (isCloudConnected && db) {
+                 dbUpdate('schedule', activityId, { location: newLocation });
+             }
+         }
+-        showToast("הפעילות שובצה!");
++        showToast("הפעילות שובצה! ✅");
+     }
+ }
+ 
+ 
+ 
++
++function toggleMoreMenu() {
++    const menu = document.getElementById('moreMenu');
++    const backdrop = document.getElementById('moreMenuBackdrop');
++    if (!menu || !backdrop) return;
++    const isHidden = menu.classList.contains('hidden');
++    menu.classList.toggle('hidden', !isHidden);
++    backdrop.classList.toggle('hidden', !isHidden);
++}
++
++function hideLoadingOverlay() {
++    const overlay = document.getElementById('loadingOverlay');
++    if (overlay) {
++        overlay.style.transition = 'opacity 0.4s ease';
++        overlay.style.opacity = '0';
++        setTimeout(() => overlay.classList.add('hidden'), 400);
++    }
++}
++
++function filterRsvpList() {
++    const query = (document.getElementById('rsvpSearch')?.value || '').toLowerCase().trim();
++    // Filter table rows
++    const rows = document.querySelectorAll('#rsvpTableBody tr');
++    rows.forEach(row => {
++        const name = row.cells[0]?.textContent?.toLowerCase() || '';
++        row.style.display = (!query || name.includes(query)) ? '' : 'none';
++    });
++    // Filter mobile cards
++    const cards = document.querySelectorAll('#rsvpCardsBody > div');
++    cards.forEach(card => {
++        const name = card.querySelector('.font-bold')?.textContent?.toLowerCase() || '';
++        card.style.display = (!query || name.includes(query)) ? '' : 'none';
++    });
++}
++
++let maxBudget = parseInt(localStorage.getItem('bm_maxBudget')) || 33000;
++
++function updateMaxBudget(value) {
++    const newMax = parseInt(value);
++    if (!newMax || newMax < 1) return;
++    maxBudget = newMax;
++    localStorage.setItem('bm_maxBudget', maxBudget);
++    const display = document.getElementById('budgetMaxDisplay');
++    if (display) display.textContent = maxBudget.toLocaleString() + ' ₪';
++    renderBudget();
++}
++
++// Undo delete support
++let undoStack = [];
++
++function showUndoToast(message, undoFn) {
++    const toast = document.getElementById('toast');
++    if (!toast) return;
++    const msg = document.getElementById('toastMessage');
++    if (msg) msg.innerHTML = `${message} <button onclick="(${undoFn.toString()})(); closeToast();" class="underline font-bold mr-2">↩ בטל</button>`;
++    toast.classList.remove('hidden');
++    setTimeout(closeToast, 6000);
++}
+diff --git a/my_diff.txt b/my_diff.txt
+index 09d8f66..087ce8d 100644
+--- a/my_diff.txt
++++ b/my_diff.txt
+@@ -1,273 +0,0 @@
+-diff --git a/index.html b/index.html
+-index 322e474..e4620c9 100644
+---- a/index.html
+-+++ b/index.html
+-@@ -651,41 +651,40 @@
+-         </section>
+- 
+-         <section id="content-schedule" class="hidden space-y-6">
+-+            <!-- אזור הוספת פעילות -->
+-             <div class="bg-white p-4 rounded-2xl shadow-sm border border-slate-100">
+--                <h3 class="font-bold text-slate-800 mb-3 flex items-center gap-2"><span>➕</span> הוספת פעילות ללו"ז</h3>
+--                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+--                    <div>
+--                        <label class="block text-xs font-bold text-slate-500 mb-1">שם הפעילות:</label>
+--                        <input type="text" id="schTitle" placeholder="לדוגמה: קידוש" class="p-2.5 border rounded-lg text-sm w-full">
+--                    </div>
+-+                <h3 class="font-bold text-slate-800 mb-3 flex items-center gap-2"><span>➕</span> הוספת פעילות חדשה</h3>
+-+                <div class="grid grid-cols-2 gap-3">
+-+                    <input type="text" id="schTitle" placeholder="שם הפעילות" class="p-2 border rounded-lg text-sm">
+-+                    <input type="text" id="schSpeaker" placeholder="דובר" class="p-2 border rounded-lg text-sm">
+-+                </div>
+-+                <button onclick="addNewScheduleItem()" class="mt-3 w-full bg-indigo-600 text-white font-bold py-2 rounded-lg text-sm">הוסף לבנק</button>
+-+            </div>
+-+        
+-+            <!-- לוח הגרירה -->
+-+            <div class="flex flex-col gap-4">
+-+                <div id="bank" class="bg-slate-100 p-4 rounded-2xl border-2 border-slate-200" ondrop="drop(event)" ondragover="allowDrop(event)">
+-+                    <h3 class="font-bold mb-3 text-slate-700 text-center">בנק פעילויות (גרור מכאן לריבועים למטה)</h3>
+-                     
+--                    <div>
+--                        <label class="block text-xs font-bold text-slate-500 mb-1">יום:</label>
+--                        <select id="schDay" class="p-2.5 border rounded-lg text-sm w-full">
+--                            <option value="שישי">יום שישי</option>
+--                            <option value="שבת">יום שבת</option>
+--                        </select>
+-+                    <div id="activity-bank" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2">
+-+                        </div>
+-+                </div>
+-+                
+-+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+-+                    <div id="col-friday-night" class="bg-blue-50 p-4 rounded-2xl min-h-[200px] border-2 border-dashed border-blue-200" ondrop="drop(event)" ondragover="allowDrop(event)">
+-+                        <h3 class="font-bold mb-3 text-blue-800 text-center">כניסת שבת</h3>
+-                     </div>
+--                    
+--                    <div>
+--                        <label class="block text-xs font-bold text-slate-500 mb-1">בחר שעה:</label>
+--                        <select id="schTime" class="p-2.5 border rounded-lg text-sm w-full bg-white">
+--                            <option value="">בחר שעה...</option>
+--                            </select>
+-+                    <div id="col-friday-evening" class="bg-blue-50 p-4 rounded-2xl min-h-[200px] border-2 border-dashed border-blue-200" ondrop="drop(event)" ondragover="allowDrop(event)">
+-+                        <h3 class="font-bold mb-3 text-blue-800 text-center">ערב שבת</h3>
+-                     </div>
+--                    
+--                    <div>
+--                        <label class="block text-xs font-bold text-slate-500 mb-1">דובר (דבר תורה, ברכה...):</label>
+--                        <input type="text" id="schSpeaker" placeholder="שם הדובר" class="p-2.5 border rounded-lg text-sm w-full">
+-+                    <div id="col-saturday-lunch" class="bg-blue-50 p-4 rounded-2xl min-h-[200px] border-2 border-dashed border-blue-200" ondrop="drop(event)" ondragover="allowDrop(event)">
+-+                        <h3 class="font-bold mb-3 text-blue-800 text-center">צהריים</h3>
+-+                    </div>
+-+                    <div id="col-third-meal" class="bg-blue-50 p-4 rounded-2xl min-h-[200px] border-2 border-dashed border-blue-200" ondrop="drop(event)" ondragover="allowDrop(event)">
+-+                        <h3 class="font-bold mb-3 text-blue-800 text-center">סעודה שלישית</h3>
+-                     </div>
+--                    
+--                    <label class="flex items-center gap-2 text-xs font-bold sm:col-span-2 mt-1">
+--                        <input type="checkbox" id="schOverlap"> פעילות חופפת (מקבילה)
+--                    </label>
+-                 </div>
+--                <button onclick="addNewScheduleItem()" class="mt-3 bg-purple-600 text-white font-bold py-2 px-6 rounded-lg text-sm">הוסף ללו"ז</button>
+-             </div>
+--            <div id="scheduleContainer" class="space-y-4"></div>
+-         </section>
+- 
+-         <!-- TAB: SETTINGS -->
+-diff --git a/js/api.js b/js/api.js
+-index d0cb49c..3df11de 100644
+---- a/js/api.js
+-+++ b/js/api.js
+-@@ -106,11 +106,14 @@ function startFirebaseListeners() {
+-         snapshot.forEach(doc => cloudSchedule.push(doc.data()));
+-         schedule = cloudSchedule;
+-         localStorage.setItem('bm_schedule', JSON.stringify(schedule));
+--        if (currentTab === 'schedule') renderSchedule();
+-+        
+-+        // זה יקרה אוטומטית בכל פעם שיש שינוי בענן, 
+-+        // וזה יחליף את כל התצוגה בלי כפילויות
+-+        if (document.getElementById('content-schedule')) renderSchedule(); 
+-     }, error => {
+-         handleFirestoreError(error, "לו\"ז");
+-     });
+--
+-+    
+-     // Menu snapshot
+-     const menuRef = getCollectionRef('menu');
+-     menuRef.onSnapshot(snapshot => {
+-diff --git a/js/app.js b/js/app.js
+-index 4801cd9..5a3e46d 100644
+---- a/js/app.js
+-+++ b/js/app.js
+-@@ -966,23 +966,21 @@ function saveEditMenu(id) {
+- 
+- async function addNewScheduleItem() {
+-     const titleEl = document.getElementById('schTitle');
+--    const dayEl = document.getElementById('schDay');
+--    const timeEl = document.getElementById('schTime');
+-     const speakerEl = document.getElementById('schSpeaker');
+--    const overlapEl = document.getElementById('schOverlap');
+- 
+--    if (!titleEl.value.trim() || !timeEl.value) {
+--        alert("נא להזין שם פעילות ושעה!");
+-+    // בדיקה מעודכנת לפי השדות החדשים ב-HTML
+-+    if (!titleEl.value.trim()) {
+-+        alert("נא להזין שם פעילות!");
+-         return;
+-     }
+- 
+-     const item = {
+-         id: 'sch_' + Date.now(),
+-         title: titleEl.value.trim(),
+--        day: dayEl.value,
+--        time: timeEl.value,
+--        speaker: speakerEl.value.trim(),
+--        overlap: overlapEl ? overlapEl.checked : false
+-+        speaker: speakerEl.value ? speakerEl.value.trim() : "",
+-+        day: "",      // שדה ריק כי הגרירה תקבע את היום
+-+        time: "",     // שדה ריק כי הגרירה תקבע את השעה
+-+        overlap: false
+-     };
+-     
+-     // 1. הוספה למערך המקומי
+-@@ -991,23 +989,22 @@ async function addNewScheduleItem() {
+-     // 2. שמירה מקומית (LocalStorage)
+-     saveLocalState();
+-     
+--    // 3. רינדור למסך
+-+    // 3. רינדור למסך (הפונקציה הזו תצייר את הפעילות בבנק)
+-     renderSchedule();
+- 
+--    // 4. הוספה לענן (Firebase) - זה היה חסר!
+-+    // 4. הוספה לענן (Firebase)
+-     if (isCloudConnected && db) {
+--        dbSet('schedule', item.id, item); // השתמשנו ב-item.id ולא ב-id לא קיים
+-+        dbSet('schedule', item.id, item);
+-     }
+-     
+-     // ניקוי שדות
+-     titleEl.value = "";
+--    timeEl.value = "";
+-     speakerEl.value = "";
+--    if (overlapEl) overlapEl.checked = false;
+-     
+--    showToast("הפעילות נוספה בהצלחה!");
+-+    showToast("הפעילות נוספה לבנק בהצלחה!");
+- }
+- 
+-+
+- async function deleteScheduleItem(id) {
+-     // 1. מחיקה מהמערך המקומי
+-     schedule = schedule.filter(s => s.id !== id);
+-diff --git a/js/ui.js b/js/ui.js
+-index 60520ee..8072245 100644
+---- a/js/ui.js
+-+++ b/js/ui.js
+-@@ -630,39 +630,32 @@ function renderMenu() {
+- }
+- 
+- function renderSchedule() {
+--    const container = document.getElementById('scheduleContainer');
+--    container.innerHTML = "";
+--    
+--    schedule.sort((a, b) => {
+--        const dayOrder = { 'שישי': 1, 'שבת': 2 };
+--        return (dayOrder[a.day] - dayOrder[b.day]) || a.time.localeCompare(b.time);
+-+    // 1. ניקוי המיכלים (מבלי למחוק את הכותרות)
+-+    document.getElementById('activity-bank').innerHTML = "";
+-+    document.querySelectorAll('[id^="col-"]').forEach(col => {
+-+        // מוחקים רק את האלמנטים שהם פעילויות ולא את כותרת הריבוע
+-+        const items = col.querySelectorAll('[id^="act_"]');
+-+        items.forEach(i => i.remove());
+-     });
+--
+-+    
+-+    // 2. רינדור מחדש
+-     schedule.forEach(item => {
+--        if (editingScheduleId === item.id) {
+--            // תצוגת עריכה
+--            container.insertAdjacentHTML('beforeend', `
+--                <div class="bg-indigo-50 p-4 rounded-xl border border-indigo-200 shadow-sm space-y-2">
+--                    <input type="text" id="editSchTitle" value="${item.title}" class="w-full p-1 border rounded text-sm">
+--                    <div class="grid grid-cols-2 gap-2">
+--                        <select id="editSchDay"><option value="שישי" ${item.day==='שישי'?'selected':''}>שישי</option><option value="שבת" ${item.day==='שבת'?'selected':''}>שבת</option></select>
+--                        <input type="time" id="editSchTime" value="${item.time}" class="p-1 border rounded text-sm">
+--                    </div>
+--                    <input type="text" id="editSchSpeaker" value="${item.speaker}" class="w-full p-1 border rounded text-sm">
+--                    <button onclick="saveEditSchedule('${item.id}')" class="bg-indigo-600 text-white w-full py-1 rounded text-xs font-bold">שמור</button>
+--                </div>
+--            `);
+--        } else {
+--            // תצוגה רגילה
+--            container.insertAdjacentHTML('beforeend', `
+--                <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex justify-between items-center cursor-pointer" onclick="editScheduleItem('${item.id}')">
+--                    <div>
+--                        <div class="font-bold text-sm text-indigo-950">${item.title}</div>
+--                        <div class="text-[11px] text-slate-600">${item.day} | ⏰ ${item.time} | 👤 ${item.speaker || 'ללא'}</div>
+--                    </div>
+--                    <button onclick="deleteScheduleItem('${item.id}')" class="text-red-400 hover:text-red-600 font-bold px-2">✕</button>
+--                </div>
+--            `);
+-+        // יצירת האלמנט
+-+        const itemHtml = `
+-+            <div id="act_${item.id}" draggable="true" ondragstart="drag(event)" 
+-+                 class="w-40 min-h-[120px] bg-white p-3 rounded-lg shadow cursor-move text-sm font-semibold border-r-4 border-indigo-500 flex flex-col justify-between overflow-hidden">
+-+                <div class="font-bold leading-tight break-words">${item.title}</div>
+-+                ${item.speaker ? `<div class="text-[10px] text-slate-500 mt-1">👤 ${item.speaker}</div>` : ''}
+-+                <button onclick="deleteScheduleItem('${item.id}')" class="text-red-400 text-[10px] underline self-start mt-2">מחק</button>
+-+            </div>
+-+        `;
+-+
+-+        // 3. לוגיקה בטוחה: אם אין location, שים בבנק
+-+        const targetId = (item.location && document.getElementById(item.location)) ? item.location : 'bank';
+-+        const targetContainer = document.getElementById(targetId === 'bank' ? 'activity-bank' : targetId);
+-+        
+-+        if (targetContainer) {
+-+            targetContainer.insertAdjacentHTML('beforeend', itemHtml);
+-         }
+-     });
+- }
+-@@ -815,3 +808,46 @@ function generateLogisticsSummary() {
+-     document.getElementById('logSummaryModal').classList.remove('hidden');
+- }
+- 
+-+function allowDrop(ev) {
+-+    ev.preventDefault();
+-+}
+-+
+-+function drag(ev) {
+-+    ev.dataTransfer.setData("text", ev.target.id);
+-+}
+-+
+-+async function drop(ev) {
+-+    ev.preventDefault();
+-+    const data = ev.dataTransfer.getData("text");
+-+    const draggedElement = document.getElementById(data);
+-+    let target = ev.target;
+-+    
+-+    // מציאת הריבוע (קונטיינר) אליו גררנו
+-+    while (target && !target.id.startsWith('col-') && target.id !== 'bank') {
+-+        target = target.parentElement;
+-+    }
+-+    
+-+    if (target) {
+-+        // 1. העברה ויזואלית מיידית (לפני הכל!)
+-+        target.appendChild(draggedElement);
+-+        
+-+        // 2. עדכון הנתונים
+-+        const activityId = data.replace('act_', '');
+-+        const task = schedule.find(s => s.id === activityId);
+-+        
+-+        if (task) {
+-+            const newLocation = target.id;
+-+            task.location = newLocation;
+-+            saveLocalState();
+-+            
+-+            // 3. עדכון ענן
+-+            if (isCloudConnected && db) {
+-+                dbUpdate('schedule', activityId, { location: newLocation });
+-+            }
+-+        }
+-+        showToast("הפעילות שובצה!");
+-+    }
+-+}
+-+
+-+
+-+

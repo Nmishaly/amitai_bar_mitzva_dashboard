@@ -193,6 +193,14 @@ function renderTasks() {
         }
     });
 
+    // Hide empty category boxes
+    ['overdue', 'today', 'thisweek', 'future'].forEach(cat => {
+        const box = document.getElementById('box-' + cat);
+        if (box) {
+            box.classList.toggle('hidden', countMap[cat] === 0);
+        }
+    });
+
     calculateStats();
 }
 
@@ -302,6 +310,33 @@ function renderRsvps() {
         tbody.insertAdjacentHTML('beforeend', rowHtml);
     });
 
+    // Mobile Cards
+    const cardsBody = document.getElementById('rsvpCardsBody');
+    if (cardsBody) {
+        cardsBody.innerHTML = "";
+        rsvps.forEach(g => {
+            const size = g.adults + g.kids;
+            const mealsText = [];
+            if (g.meals.includes('friday')) mealsText.push('🍷 ערב שבת');
+            if (g.meals.includes('saturday')) mealsText.push('⛪ בוקר');
+            if (g.meals.includes('third')) mealsText.push('🥧 שלישית');
+            cardsBody.insertAdjacentHTML('beforeend', `
+                <div class="p-4 flex justify-between items-start gap-2">
+                    <div class="flex-1">
+                        <div class="font-bold text-slate-800 text-sm">${g.name}</div>
+                        <div class="text-xs text-slate-500 mt-1 flex flex-wrap gap-2">
+                            <span>👨‍🦳 ${g.adults} מבוגרים</span>
+                            <span>👶 ${g.kids} ילדים</span>
+                            <span>${g.sleep === 'yes' ? '🏡 נשאר' : '🚗 לא נשאר'}</span>
+                        </div>
+                        <div class="text-xs text-indigo-600 font-semibold mt-1">${mealsText.join(' · ') || 'ללא ארוחות'}</div>
+                    </div>
+                    <button onclick="deleteRsvp('${g.id}')" class="text-slate-300 hover:text-red-500 transition font-bold text-lg leading-none">✕</button>
+                </div>
+            `);
+        });
+    }
+
     // Update stats
     safeSetText('rsvpTotalCount', totalCount);
     safeSetText('rsvpSubtotals', `${totalAdults} מבוגרים | ${totalKids} ילדים`);
@@ -346,7 +381,9 @@ function renderShopping() {
         `;
         container.insertAdjacentHTML('beforeend', categorySectionHtml);
 
-        catItems.forEach(item => {
+        // Sort: unbought first, bought last
+        const sortedItems = [...catItems].sort((a, b) => (a.bought ? 1 : 0) - (b.bought ? 1 : 0));
+        sortedItems.forEach(item => {
             const itemHtml = `
                 <div class="p-4 flex justify-between items-center hover:bg-slate-50 transition">
                     <label class="flex items-center gap-3 cursor-pointer select-none flex-1">
@@ -377,6 +414,19 @@ function renderRooms() {
             </div>
         `;
         return;
+    }
+
+    // Show overall occupancy summary
+    const totalBeds = rooms.reduce((sum, r) => sum + (parseInt(r.capacity) || 0), 0);
+    const totalOccupied = rooms.reduce((sum, r) => sum + (r.guests ? r.guests.length : 0), 0);
+    const summaryEl = document.getElementById('roomsSummary');
+    if (summaryEl) {
+        summaryEl.innerHTML = `
+            <div class="bg-purple-50 border border-purple-100 rounded-xl px-4 py-3 flex items-center justify-between mb-4">
+                <span class="text-sm font-bold text-purple-900">🏨 סיכום תפוסה כוללת בוילה</span>
+                <span class="text-sm font-extrabold text-purple-700">${totalOccupied} מתוך ${totalBeds} מיטות תפוסות</span>
+            </div>
+        `;
     }
 
     rooms.forEach(room => {
@@ -455,7 +505,7 @@ function renderCalls() {
                     
                     <div class="mt-3">
                         <label class="text-[10px] text-slate-400 font-bold block mb-1">הערות וסיכום:</label>
-                        <textarea onchange="updateCallNotes('${call.id}', this.value)" placeholder="הקלידו כאן מידע חשוב..." class="w-full p-2.5 border border-slate-200 rounded-xl text-xs focus:ring-1 focus:ring-indigo-500 focus:outline-none bg-slate-50" rows="3">${call.notes || ''}</textarea>
+                        <textarea onblur="updateCallNotes('${call.id}', this.value)" placeholder="הקלידו כאן מידע חשוב..." class="w-full p-2.5 border border-slate-200 rounded-xl text-xs focus:ring-1 focus:ring-indigo-500 focus:outline-none bg-slate-50" rows="3">${call.notes || ''}</textarea>
                     </div>
                 </div>
                 <div class="flex justify-end border-t border-slate-50 pt-2">
@@ -475,6 +525,12 @@ function renderBudget() {
     const container = document.getElementById('budgetListContainer');
     if (!container) return;
     container.innerHTML = "";
+    // Sync max budget input with saved value
+    const maxInput = document.getElementById('maxBudgetInput');
+    const maxDisplay = document.getElementById('budgetMaxDisplay');
+    const savedMax = typeof maxBudget !== "undefined" ? maxBudget : 33000;
+    if (maxInput) maxInput.value = savedMax;
+    if (maxDisplay) maxDisplay.textContent = savedMax.toLocaleString() + ' ₪';
 
     let totalExpenses = 0;
     let totalPaid = 0;
@@ -529,13 +585,13 @@ function renderBudget() {
     safeSetText('budgetTotalExpenses', `${totalExpenses.toLocaleString()} ₪`);
     safeSetText('budgetTotalPaid', `${totalPaid.toLocaleString()} ₪`);
 
-    const maxBudget = 33000;
+    const currentMax = typeof maxBudget !== "undefined" ? maxBudget : 33000;
     // כאן התיקון: חישוב האחוזים לפי הסכום הכולל (totalExpenses)
-    const progressPercent = Math.min(100, Math.round((totalExpenses / maxBudget) * 100));
+    const progressPercent = Math.min(100, Math.round((totalExpenses / currentMax) * 100));
     
     safeSetText('budgetProgressPercent', `${progressPercent}% מנוצל`);
     
-    const remaining = maxBudget - totalExpenses;
+    const remaining = currentMax - totalExpenses;
     safeSetText('budgetRemainingAmount', remaining >= 0 ? `נותר: ${remaining.toLocaleString()} ₪` : `חריגה: ${Math.abs(remaining).toLocaleString()} ₪`);
 
     // עדכון ה-Progress Bar הוויזואלי
@@ -630,34 +686,173 @@ function renderMenu() {
 }
 
 function renderSchedule() {
-    // 1. ניקוי המיכלים (מבלי למחוק את הכותרות)
-    document.getElementById('activity-bank').innerHTML = "";
+    const colColors = {
+        'col-friday-night':  { border: 'border-indigo-400', bg: 'bg-indigo-50' },
+        'col-friday-evening': { border: 'border-purple-400', bg: 'bg-purple-50' },
+        'col-saturday-lunch': { border: 'border-amber-400',  bg: 'bg-amber-50'  },
+        'col-third-meal':     { border: 'border-emerald-400', bg: 'bg-emerald-50' },
+        'bank':               { border: 'border-slate-400',  bg: 'bg-white'     }
+    };
+
+    // 1. ניקוי
+    const bankEl = document.getElementById('activity-bank');
+    if (bankEl) bankEl.innerHTML = "";
     document.querySelectorAll('[id^="col-"]').forEach(col => {
-        // מוחקים רק את האלמנטים שהם פעילויות ולא את כותרת הריבוע
-        const items = col.querySelectorAll('[id^="act_"]');
-        items.forEach(i => i.remove());
+        col.querySelectorAll('[id^="act_"]').forEach(i => i.remove());
     });
-    
-    // 2. רינדור מחדש
+
+    // 2. ספירת פעילויות לכל עמודה
+    const colCount = {};
     schedule.forEach(item => {
-        // יצירת האלמנט
+        const loc = (item.location && document.getElementById(item.location)) ? item.location : 'bank';
+        colCount[loc] = (colCount[loc] || 0) + 1;
+    });
+
+    // 3. עדכון badges
+    ['col-friday-night','col-friday-evening','col-saturday-lunch','col-third-meal'].forEach(colId => {
+        const badge = document.getElementById('badge-' + colId);
+        if (badge) {
+            const count = colCount[colId] || 0;
+            badge.textContent = count;
+            badge.classList.toggle('hidden', count === 0);
+        }
+    });
+    const bankBadge = document.getElementById('bank-badge');
+    if (bankBadge) bankBadge.textContent = colCount['bank'] || 0;
+
+    // 4. רינדור כרטיסיות
+    const cols = ['col-friday-night','col-friday-evening','col-saturday-lunch','col-third-meal'];
+    const colLabels = {
+        'col-friday-night': 'כניסת שבת',
+        'col-friday-evening': 'ערב שבת',
+        'col-saturday-lunch': 'צהריים שבת',
+        'col-third-meal': 'סעודה שלישית'
+    };
+
+    schedule.forEach(item => {
+        const loc = (item.location && document.getElementById(item.location)) ? item.location : 'bank';
+        const colors = colColors[loc] || colColors['bank'];
+
+        // כפתורי שיבוץ למובייל
+        const assignBtns = loc === 'bank' ? cols.map(cid => `
+            <button onclick="assignActivity('${item.id}', '${cid}')" 
+                class="text-[10px] bg-slate-100 hover:bg-indigo-100 text-slate-600 hover:text-indigo-700 px-2 py-0.5 rounded-full transition font-semibold">
+                → ${colLabels[cid]}
+            </button>`).join('') : `
+            <button onclick="assignActivity('${item.id}', 'bank')" 
+                class="text-[10px] bg-slate-100 hover:bg-amber-100 text-slate-500 hover:text-amber-700 px-2 py-0.5 rounded-full transition font-semibold">
+                ↩ החזר לבנק
+            </button>`;
+
         const itemHtml = `
-            <div id="act_${item.id}" draggable="true" ondragstart="drag(event)" 
-                 class="w-40 min-h-[120px] bg-white p-3 rounded-lg shadow cursor-move text-sm font-semibold border-r-4 border-indigo-500 flex flex-col justify-between overflow-hidden">
-                <div class="font-bold leading-tight break-words">${item.title}</div>
-                ${item.speaker ? `<div class="text-[10px] text-slate-500 mt-1">👤 ${item.speaker}</div>` : ''}
-                <button onclick="deleteScheduleItem('${item.id}')" class="text-red-400 text-[10px] underline self-start mt-2">מחק</button>
+            <div id="act_${item.id}" draggable="true" ondragstart="drag(event)"
+                 class="bg-white p-3 rounded-xl shadow-sm cursor-move text-sm font-semibold border-r-4 ${colors.border} flex flex-col gap-1.5 overflow-hidden hover:shadow-md transition">
+                <div class="font-bold leading-tight break-words text-slate-800">${item.title}</div>
+                ${item.speaker ? `<div class="text-[10px] text-slate-500 flex items-center gap-1">👤 ${item.speaker}</div>` : ''}
+                ${item.time ? `<div class="text-[10px] text-indigo-600 font-bold">🕐 ${item.time}</div>` : ''}
+                <div class="flex flex-wrap gap-1 mt-1 sm:hidden">${assignBtns}</div>
+                <div class="flex flex-wrap gap-1 mt-1 hidden sm:flex">${assignBtns}</div>
+                <button onclick="deleteScheduleItem('${item.id}')" class="text-red-300 hover:text-red-500 text-[10px] self-start transition">🗑️ מחק</button>
             </div>
         `;
 
-        // 3. לוגיקה בטוחה: אם אין location, שים בבנק
-        const targetId = (item.location && document.getElementById(item.location)) ? item.location : 'bank';
-        const targetContainer = document.getElementById(targetId === 'bank' ? 'activity-bank' : targetId);
-        
+        const targetContainer = document.getElementById(loc === 'bank' ? 'activity-bank' : loc);
         if (targetContainer) {
+            // הסר hint ריק אם קיים
+            const hint = targetContainer.querySelector('.empty-hint, .col-empty-hint');
+            if (hint) hint.remove();
             targetContainer.insertAdjacentHTML('beforeend', itemHtml);
         }
     });
+
+    // 5. הצג hint בעמודות ריקות
+    cols.forEach(colId => {
+        const col = document.getElementById(colId);
+        if (col && !col.querySelector('[id^="act_"]')) {
+            const existing = col.querySelector('.col-empty-hint');
+            if (!existing) {
+                col.insertAdjacentHTML('beforeend', `<p class="col-empty-hint text-xs text-slate-300 text-center mt-6">גרור פעילות לכאן</p>`);
+            }
+        }
+    });
+    if (bankEl && !bankEl.querySelector('[id^="act_"]')) {
+        bankEl.innerHTML = `<div class="col-span-full text-center text-slate-400 text-xs py-4 empty-hint">אין פעילויות בבנק — הוסיפו למעלה</div>`;
+    }
+}
+
+function assignActivity(activityId, targetColId) {
+    const item = schedule.find(s => s.id === activityId);
+    if (!item) return;
+    item.location = targetColId;
+    saveLocalState();
+    renderSchedule();
+    if (isCloudConnected && db) {
+        dbUpdate('schedule', activityId, { location: targetColId });
+    }
+    showToast("הפעילות שובצה! ✅");
+}
+
+function showScheduleSummary() {
+    const modal = document.getElementById('scheduleSummaryModal');
+    const content = document.getElementById('scheduleSummaryContent');
+    if (!modal || !content) return;
+
+    const cols = [
+        { id: 'col-friday-night',   label: '🕯️ כניסת שבת' },
+        { id: 'col-friday-evening', label: '🍷 ערב שבת' },
+        { id: 'col-saturday-lunch', label: '☀️ צהריים שבת' },
+        { id: 'col-third-meal',     label: '🥧 סעודה שלישית' },
+        { id: 'bank',               label: '🏦 בנק (לא שובץ)' }
+    ];
+
+    content.innerHTML = cols.map(col => {
+        const items = schedule.filter(s => {
+            const loc = (s.location && document.getElementById(s.location)) ? s.location : 'bank';
+            return loc === col.id;
+        });
+        if (items.length === 0) return '';
+        return `
+            <div class="bg-slate-50 rounded-xl p-3 border border-slate-100">
+                <h4 class="font-extrabold text-slate-800 mb-2">${col.label}</h4>
+                <div class="space-y-1">
+                    ${items.map(i => `
+                        <div class="flex items-center gap-2 text-xs text-slate-700">
+                            ${i.time ? `<span class="font-bold text-indigo-600 w-10">${i.time}</span>` : '<span class="w-10"></span>'}
+                            <span class="font-semibold">${i.title}</span>
+                            ${i.speaker ? `<span class="text-slate-400">— ${i.speaker}</span>` : ''}
+                        </div>
+                    `).join('')}
+                </div>
+            </div>
+        `;
+    }).join('');
+
+    modal.classList.remove('hidden');
+}
+
+function copyScheduleSummary() {
+    const cols = [
+        { id: 'col-friday-night',   label: '🕯️ כניסת שבת' },
+        { id: 'col-friday-evening', label: '🍷 ערב שבת' },
+        { id: 'col-saturday-lunch', label: '☀️ צהריים שבת' },
+        { id: 'col-third-meal',     label: '🥧 סעודה שלישית' }
+    ];
+    let text = "📋 לו\"ז שבת בר המצווה — אמיתי\n\n";
+    cols.forEach(col => {
+        const items = schedule.filter(s => {
+            const loc = (s.location && document.getElementById(s.location)) ? s.location : 'bank';
+            return loc === col.id;
+        });
+        if (items.length === 0) return;
+        text += `${col.label}\n`;
+        items.forEach(i => {
+            text += `  ${i.time ? i.time + ' ' : ''}${i.title}${i.speaker ? ' — ' + i.speaker : ''}\n`;
+        });
+        text += '\n';
+    });
+    if (navigator.clipboard) {
+        navigator.clipboard.writeText(text).then(() => showToast("הלו\"ז הועתק! 📋"));
+    }
 }
 
 function switchTab(tabId) {
@@ -693,12 +888,31 @@ function switchTab(tabId) {
     else if (tabId === 'rsvp') renderRsvps();
     else if (tabId === 'shopping') renderShopping();
     else if (tabId === 'rooms') renderRooms();
-    else if (tabId === 'menu') renderMenu(); // הוספנו את זה
+    else if (tabId === 'menu') renderMenu();
     else if (tabId === 'budget') renderBudget();
     else if (tabId === 'calls') renderCalls();
-    else if (tabId === 'schedule') renderSchedule(); // הוספנו את זה
+    else if (tabId === 'schedule') renderSchedule();
     else if (tabId === 'recent') renderRecentTasks();
     else if (tabId === 'logistics') renderLogistics();
+
+    // עדכון ניווט תחתון במובייל
+    const mobTabs = ['tasks', 'rsvp', 'shopping', 'budget'];
+    mobTabs.forEach(id => {
+        const btn = document.getElementById('mob-tab-' + id);
+        if (btn) {
+            btn.className = id === tabId
+                ? 'mob-tab-btn flex flex-col items-center gap-0.5 py-2 px-3 rounded-xl text-indigo-600 font-bold flex-1'
+                : 'mob-tab-btn flex flex-col items-center gap-0.5 py-2 px-3 rounded-xl text-slate-400 flex-1';
+        }
+    });
+    // כפתור "עוד" נשאר פעיל אם הטאב הנבחר לא בניווט הראשי
+    const moreBtn = document.getElementById('mob-tab-more');
+    if (moreBtn) {
+        const isMainTab = mobTabs.includes(tabId);
+        moreBtn.className = !isMainTab
+            ? 'mob-tab-btn flex flex-col items-center gap-0.5 py-2 px-3 rounded-xl text-indigo-600 font-bold flex-1'
+            : 'mob-tab-btn flex flex-col items-center gap-0.5 py-2 px-3 rounded-xl text-slate-400 flex-1';
+    }
 }
 
 function closeToast() {
@@ -712,7 +926,8 @@ function showToast(message) {
         const msg = document.getElementById('toastMessage');
         if (msg) msg.innerText = message;
         toast.classList.remove('hidden');
-        setTimeout(closeToast, 4000);
+        const duration = message.length > 50 ? 7000 : 4000;
+        setTimeout(closeToast, duration);
     }
 }
 
@@ -780,9 +995,19 @@ function generateWhatsAppNotification() {
 
 function copyToClipboard() {
     const txt = document.getElementById('logSummaryText');
-    txt.select();
-    document.execCommand('copy');
-    alert("הועתק ללוח!");
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(txt.value).then(() => {
+            showToast("הועתק ללוח! 📋");
+        }).catch(() => {
+            txt.select();
+            document.execCommand('copy');
+            showToast("הועתק ללוח! 📋");
+        });
+    } else {
+        txt.select();
+        document.execCommand('copy');
+        showToast("הועתק ללוח! 📋");
+    }
 }
 
 function closeLogSummary() {
@@ -819,7 +1044,6 @@ function drag(ev) {
 async function drop(ev) {
     ev.preventDefault();
     const data = ev.dataTransfer.getData("text");
-    const draggedElement = document.getElementById(data);
     let target = ev.target;
     
     // מציאת הריבוע (קונטיינר) אליו גררנו
@@ -828,26 +1052,85 @@ async function drop(ev) {
     }
     
     if (target) {
-        // 1. העברה ויזואלית מיידית (לפני הכל!)
-        target.appendChild(draggedElement);
-        
-        // 2. עדכון הנתונים
+        // עדכון הנתונים
         const activityId = data.replace('act_', '');
         const task = schedule.find(s => s.id === activityId);
         
         if (task) {
-            const newLocation = target.id;
+            // location: אם גררנו לבנק — שמור 'bank', אחרת שמור את id העמודה
+            const newLocation = target.id === 'bank' ? 'bank' : target.id;
             task.location = newLocation;
             saveLocalState();
             
-            // 3. עדכון ענן
+            // רינדור מחדש — מעדכן badges, hints וכפתורי שיבוץ
+            renderSchedule();
+            
+            // עדכון ענן
             if (isCloudConnected && db) {
                 dbUpdate('schedule', activityId, { location: newLocation });
             }
         }
-        showToast("הפעילות שובצה!");
+        showToast("הפעילות שובצה! ✅");
     }
 }
 
 
 
+
+function toggleMoreMenu() {
+    const menu = document.getElementById('moreMenu');
+    const backdrop = document.getElementById('moreMenuBackdrop');
+    if (!menu || !backdrop) return;
+    const isHidden = menu.classList.contains('hidden');
+    menu.classList.toggle('hidden', !isHidden);
+    backdrop.classList.toggle('hidden', !isHidden);
+}
+
+function hideLoadingOverlay() {
+    const overlay = document.getElementById('loadingOverlay');
+    if (overlay) {
+        overlay.style.transition = 'opacity 0.4s ease';
+        overlay.style.opacity = '0';
+        setTimeout(() => overlay.classList.add('hidden'), 400);
+    }
+}
+
+function filterRsvpList() {
+    const query = (document.getElementById('rsvpSearch')?.value || '').toLowerCase().trim();
+    // Filter table rows
+    const rows = document.querySelectorAll('#rsvpTableBody tr');
+    rows.forEach(row => {
+        const name = row.cells[0]?.textContent?.toLowerCase() || '';
+        row.style.display = (!query || name.includes(query)) ? '' : 'none';
+    });
+    // Filter mobile cards
+    const cards = document.querySelectorAll('#rsvpCardsBody > div');
+    cards.forEach(card => {
+        const name = card.querySelector('.font-bold')?.textContent?.toLowerCase() || '';
+        card.style.display = (!query || name.includes(query)) ? '' : 'none';
+    });
+}
+
+let maxBudget = parseInt(localStorage.getItem('bm_maxBudget')) || 33000;
+
+function updateMaxBudget(value) {
+    const newMax = parseInt(value);
+    if (!newMax || newMax < 1) return;
+    maxBudget = newMax;
+    localStorage.setItem('bm_maxBudget', maxBudget);
+    const display = document.getElementById('budgetMaxDisplay');
+    if (display) display.textContent = maxBudget.toLocaleString() + ' ₪';
+    renderBudget();
+}
+
+// Undo delete support
+let undoStack = [];
+
+function showUndoToast(message, undoFn) {
+    const toast = document.getElementById('toast');
+    if (!toast) return;
+    const msg = document.getElementById('toastMessage');
+    if (msg) msg.innerHTML = `${message} <button onclick="(${undoFn.toString()})(); closeToast();" class="underline font-bold mr-2">↩ בטל</button>`;
+    toast.classList.remove('hidden');
+    setTimeout(closeToast, 6000);
+}

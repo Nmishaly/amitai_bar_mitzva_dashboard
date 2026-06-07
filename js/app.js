@@ -263,6 +263,7 @@ async function addNewRsvp() {
 }
 
 async function deleteRsvp(guestId) {
+    if (!confirm("למחוק את רישום האורח לצמיתות?")) return;
     // Immediate local update
     rsvps = rsvps.filter(g => g.id !== guestId);
     saveLocalState();
@@ -395,6 +396,7 @@ async function updateTaskStatus(taskId, newStatus) {
 }
 
 async function deleteTask(taskId) {
+    if (!confirm("למחוק את המשימה לצמיתות?")) return;
     tasks = tasks.filter(t => t.id !== taskId);
     saveLocalState();
     renderTasks();
@@ -511,6 +513,7 @@ async function toggleShopItem(itemId) {
 }
 
 async function deleteShopItem(itemId) {
+    if (!confirm("למחוק את הפריט מרשימת הקניות?")) return;
     shopping = shopping.filter(s => s.id !== itemId);
     saveLocalState();
     renderShopping();
@@ -607,6 +610,7 @@ async function addNewRoom() {
 
 // Delete Room (Fixed and Robustified)
 async function deleteRoom(roomId) {
+    if (!confirm("למחוק את החדר לצמיתות?")) return;
     rooms = rooms.filter(r => r.id !== roomId);
     saveLocalState();
     renderRooms();
@@ -647,6 +651,7 @@ async function updateCallNotes(callId, notesText) {
 
 // Delete Call card
 async function deleteCall(callId) {
+    if (!confirm("למחוק את הבירור לצמיתות?")) return;
     calls = calls.filter(c => c.id !== callId);
     saveLocalState();
     renderCalls();
@@ -737,6 +742,7 @@ async function toggleExpensePaid(expId) {
 }
 
 async function deleteExpense(expId) {
+    if (!confirm("למחוק את ההוצאה לצמיתות?")) return;
     budget = budget.filter(e => e.id !== expId);
     saveLocalState();
     renderBudget();
@@ -970,8 +976,7 @@ async function addNewScheduleItem() {
 
     // בדיקה מעודכנת לפי השדות החדשים ב-HTML
     if (!titleEl.value.trim()) {
-        alert("נא להזין שם פעילות!");
-        return;
+        showToast("נא להזין שם פעילות!"); return;
     }
 
     const item = {
@@ -1139,5 +1144,8 @@ window.onload = function() {
     }
 
     populateTimeOptions();
+    
+    // Fallback: hide loading overlay after 2.5 seconds even if Firebase didn't connect
+    setTimeout(hideLoadingOverlay, 2500);
 };
 
