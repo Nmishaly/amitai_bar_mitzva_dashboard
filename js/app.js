@@ -67,6 +67,7 @@ let currentMenuFilter = 'הכל';
 let editingMenuId = null;
 let schedule = JSON.parse(localStorage.getItem('bm_schedule')) || [];
 let editingScheduleId = null;
+let currentLogisticsFilter = 'all';
 let currentTab = 'tasks';
 let editingTaskId = null; // מזהה המשימה שנמצאת כרגע בעריכה
 let currentResponsibleFilter = 'all'; // פילטר סינון גלובלי למשימות
@@ -321,17 +322,11 @@ async function addCalculatedDrinksToShopping() {
     saveLocalState();
     renderShopping();
 
-    // Cloud sync in background
+    // Cloud sync — use same items that were added locally
     if (isCloudConnected && db) {
-        for (const item of itemsToAdd) {
-            const newItem = {
-                id: 's_' + Date.now() + '_' + Math.random().toString(36).substring(2, 6),
-                title: item.title,
-                category: item.category,
-                bought: false
-            };
-            dbSet('shopping', newItem.id, newItem);
-        }
+        shopping.slice(-itemsToAdd.length).forEach(item => {
+            dbSet('shopping', item.id, item);
+        });
     }
     showToast("כמויות השתייה המחושבות נוספו ישירות לרשימת הקניות שלכם!");
 }
@@ -503,6 +498,7 @@ async function toggleShopItem(itemId) {
     if (index !== -1) {
         const newStatus = !shopping[index].bought;
         shopping[index].bought = newStatus;
+        if (newStatus) shopping[index].boughtAt = Date.now();
         saveLocalState();
         renderShopping();
 
@@ -626,6 +622,7 @@ async function toggleCallDone(callId) {
     if (index !== -1) {
         const newStatus = !calls[index].done;
         calls[index].done = newStatus;
+        if (newStatus) calls[index].closedAt = Date.now();
         saveLocalState();
         renderCalls();
 
@@ -647,6 +644,35 @@ async function updateCallNotes(callId, notesText) {
             dbUpdate('calls', callId, { notes: notesText });
         }
     }
+}
+
+
+async function addNewCall() {
+    const titleEl = document.getElementById('newCallTitle');
+    const subtitleEl = document.getElementById('newCallSubtitle');
+    const phoneEl = document.getElementById('newCallPhone');
+    if (!titleEl) return;
+    const title = titleEl.value.trim();
+    if (!title) { showToast("נא להזין שם לבירור!"); return; }
+
+    const newCall = {
+        id: 'c_' + Date.now(),
+        title: title,
+        subtitle: subtitleEl ? subtitleEl.value.trim() : '',
+        phone: phoneEl ? phoneEl.value.trim() : '',
+        notes: '',
+        done: false
+    };
+
+    calls.push(newCall);
+    saveLocalState();
+    renderCalls();
+    if (isCloudConnected && db) dbSet('calls', newCall.id, newCall);
+
+    titleEl.value = '';
+    if (subtitleEl) subtitleEl.value = '';
+    if (phoneEl) phoneEl.value = '';
+    showToast("הבירור נוסף בהצלחה!");
 }
 
 // Delete Call card
@@ -681,6 +707,7 @@ async function addNewExpense() {
         id: 'exp_' + Date.now(),
         name: name,
         totalAmount: totalAmount,
+        createdAt: Date.now(),
         // רשימת תתי-תשלומים כפי שביקשת
         payments: [{ 
             amount: paid, 
@@ -708,22 +735,46 @@ async function addNewExpense() {
     showToast("ההוצאה נוספה בהצלחה!");
 }
 
-async function addPaymentToExpense(expId) {
-    const amount = parseFloat(prompt("מהו סכום התשלום הנוסף?"));
-    const method = prompt("איך שולם? (מזומן/העברה)");
-    const date = prompt("תאריך התשלום (YYYY-MM-DD)", new Date().toISOString().split('T')[0]);
+function addPaymentToExpense(expId) {
+    // Show inline payment form below the expense
+    const existing = document.getElementById('paymentForm-' + expId);
+    if (existing) { existing.remove(); return; }
+    const container = document.querySelector(`[data-exp-id="${expId}"]`);
+    if (!container) return;
+    const today = new Date().toISOString().split('T')[0];
+    const formHtml = `
+        <div id="paymentForm-${expId}" class="bg-indigo-50 border border-indigo-100 rounded-xl p-3 mt-2 space-y-2">
+            <div class="text-xs font-bold text-indigo-800 mb-1">➕ הוספת תשלום</div>
+            <div class="grid grid-cols-3 gap-2">
+                <input type="number" id="payAmt-${expId}" placeholder="סכום ₪" class="p-1.5 border rounded-lg text-xs text-center focus:ring-1 focus:ring-indigo-400 focus:outline-none">
+                <select id="payMethod-${expId}" class="p-1.5 border rounded-lg text-xs bg-white focus:outline-none">
+                    <option>מזומן</option>
+                    <option>העברה</option>
+                    <option>אשראי</option>
+                </select>
+                <input type="date" id="payDate-${expId}" value="${today}" class="p-1.5 border rounded-lg text-xs focus:outline-none">
+            </div>
+            <div class="flex gap-2 justify-end">
+                <button onclick="document.getElementById('paymentForm-${expId}').remove()" class="text-xs text-slate-500 hover:text-slate-700 font-bold px-3 py-1 rounded-lg bg-slate-100">ביטול</button>
+                <button onclick="savePayment('${expId}')" class="text-xs text-white font-bold px-3 py-1 rounded-lg bg-indigo-600 hover:bg-indigo-700">שמור תשלום</button>
+            </div>
+        </div>
+    `;
+    container.insertAdjacentHTML('beforeend', formHtml);
+}
 
-    if (amount && !isNaN(amount)) {
-        const exp = budget.find(e => e.id === expId);
-        if (exp) {
-            exp.payments.push({ amount, method, date });
-            saveLocalState();
-            renderBudget();
-            if (isCloudConnected && db) {
-                dbUpdate('budget', expId, { payments: exp.payments });
-            }
-            showToast("תשלום נוסף בהצלחה!");
-        }
+async function savePayment(expId) {
+    const amount = parseFloat(document.getElementById('payAmt-' + expId)?.value);
+    const method = document.getElementById('payMethod-' + expId)?.value || 'לא צוין';
+    const date = document.getElementById('payDate-' + expId)?.value || new Date().toISOString().split('T')[0];
+    if (!amount || isNaN(amount)) { showToast("נא להזין סכום תקין!"); return; }
+    const exp = budget.find(e => e.id === expId);
+    if (exp) {
+        exp.payments.push({ amount, method, date });
+        saveLocalState();
+        renderBudget();
+        if (isCloudConnected && db) dbUpdate('budget', expId, { payments: exp.payments });
+        showToast("תשלום נוסף בהצלחה! ✅");
     }
 }
 
@@ -819,11 +870,32 @@ async function deleteLogisticsKit(logId) {
 
 function editLogName(logId) {
     const log = logistics.find(l => l.id === logId);
-    const newName = prompt("עדכן את שם הערכה:", log.name);
-    if (newName) {
+    const nameEl = document.getElementById('logname-' + logId);
+    if (!nameEl) return;
+    const currentName = log.name;
+    nameEl.innerHTML = `
+        <input type="text" id="logNameInput-${logId}" value="${currentName}" 
+            class="border border-indigo-300 rounded px-2 py-0.5 text-sm font-bold w-full focus:outline-none focus:ring-1 focus:ring-indigo-500"
+            onkeydown="if(event.key==='Enter') saveLogName('${logId}'); if(event.key==='Escape') renderLogistics(currentLogisticsFilter);">
+        <button onclick="saveLogName('${logId}')" class="text-[10px] text-indigo-600 font-bold mt-1">שמור</button>
+    `;
+    setTimeout(() => {
+        const input = document.getElementById('logNameInput-' + logId);
+        if (input) { input.focus(); input.select(); }
+    }, 50);
+}
+
+function saveLogName(logId) {
+    const input = document.getElementById('logNameInput-' + logId);
+    if (!input) return;
+    const newName = input.value.trim();
+    if (!newName) return;
+    const log = logistics.find(l => l.id === logId);
+    if (log) {
         log.name = newName;
         saveLocalState();
-        renderLogistics();
+        if (isCloudConnected && db) dbUpdate('logistics', logId, { name: newName });
+        renderLogistics(currentLogisticsFilter);
     }
 }
 
@@ -883,7 +955,7 @@ async function addNewMenuItem() {
     const glutEl = document.getElementById('tagGluten');
 
     if (!nameEl.value.trim()) {
-        alert("נא להזין שם למנה!");
+        showToast("נא להזין שם למנה!");
         return;
     }
 
@@ -941,6 +1013,20 @@ async function deleteMenuItem(id) {
 function filterMenu(filter) {
     currentMenuFilter = filter;
     renderMenu();
+}
+
+function filterLogistics(filter) {
+    currentLogisticsFilter = filter;
+    renderLogistics(filter);
+    // Update active button styles
+    ['all','וילה','אולם','בית כנסת'].forEach(f => {
+        const btn = document.getElementById('logFilter-' + f);
+        if (btn) {
+            btn.className = f === filter
+                ? 'bg-blue-600 text-white px-3 py-1 rounded-full text-xs font-bold'
+                : 'bg-slate-200 text-slate-700 px-3 py-1 rounded-full text-xs';
+        }
+    });
 }
 
 function editMenuItem(id) {

@@ -13,3 +13,10 @@ let auth = null;
 let isCloudConnected = false;
 let isSeeding = false;
 let appId = localStorage.getItem('bm_appId') || 'bar-mitzvah-amitai';
+
+// ─── הגדרות אירוע ───────────────────────────────────────
+const EVENT_CONFIG = {
+    eventDate: "2026-06-12T18:00:00",   // תאריך ושעת כניסת שבת
+    eventName: "שבת בר המצווה של אמיתי",
+    maxBudgetDefault: 33000              // תקציב מקסימום ברירת מחדל
+};

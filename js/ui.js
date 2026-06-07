@@ -209,41 +209,93 @@ function renderRecentTasks() {
     if (!container) return;
     container.innerHTML = "";
 
-    const sortedTasks = [...tasks].sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0)).slice(0, 8);
+    // איסוף עדכונים מכל הסוגים
+    const updates = [];
 
-    if (sortedTasks.length === 0) {
-        container.innerHTML = `
-            <div class="p-8 text-center text-slate-400 text-sm">
-                אין עדיין משימות רשומות במערכת.
-            </div>
-        `;
+    // משימות — לפי updatedAt או createdAt
+    tasks.forEach(t => {
+        const ts = t.updatedAt || t.createdAt || 0;
+        let action = "נוספה";
+        let color = "bg-indigo-100 text-indigo-800";
+        if (t.updatedAt && t.updatedAt !== t.createdAt) {
+            action = t.status === 'done' ? "✅ הושלמה" : "עודכנה";
+            color = t.status === 'done' ? "bg-emerald-100 text-emerald-800" : "bg-amber-100 text-amber-800";
+        }
+        updates.push({
+            ts, type: 'task',
+            title: t.title,
+            subtitle: `👤 ${t.responsible || 'לא הוגדר'}`,
+            badge: `📅 משימה`,
+            action,
+            color,
+            statusClass: t.status === 'done' ? 'line-through text-slate-400' : ''
+        });
+    });
+
+    // קניות שנקנו לאחרונה
+    shopping.filter(s => s.bought).forEach(s => {
+        updates.push({
+            ts: s.boughtAt || 0, type: 'shopping',
+            title: s.title,
+            subtitle: '',
+            badge: '🛒 קניות',
+            action: '✅ נקנה',
+            color: 'bg-emerald-100 text-emerald-800',
+            statusClass: 'line-through text-slate-400'
+        });
+    });
+
+    // בירורים שנסגרו
+    calls.filter(c => c.done).forEach(c => {
+        updates.push({
+            ts: c.closedAt || 0, type: 'call',
+            title: c.title,
+            subtitle: c.subtitle || '',
+            badge: '📞 בירור',
+            action: '✅ טופל',
+            color: 'bg-emerald-100 text-emerald-800',
+            statusClass: ''
+        });
+    });
+
+    // הוצאות שנוספו
+    budget.forEach(e => {
+        updates.push({
+            ts: e.createdAt || 0, type: 'budget',
+            title: e.name,
+            subtitle: `${e.totalAmount.toLocaleString()} ₪`,
+            badge: '💰 תקציב',
+            action: 'נוספה',
+            color: 'bg-rose-100 text-rose-800',
+            statusClass: ''
+        });
+    });
+
+    // מיון לפי זמן — החדש ביותר קודם
+    const sorted = updates
+        .filter(u => u.ts > 0)
+        .sort((a, b) => b.ts - a.ts)
+        .slice(0, 15);
+
+    if (sorted.length === 0) {
+        container.innerHTML = `<div class="p-8 text-center text-slate-400 text-sm">אין עדיין פעילות רשומה במערכת.</div>`;
         return;
     }
 
-    sortedTasks.forEach(task => {
-        const categoryBadge = `<span class="bg-blue-100 text-blue-800 text-xs font-bold px-2.5 py-0.5 rounded-full">📅 כללי</span>`;
-
-        const itemHtml = `
-            <div class="p-4 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 hover:bg-slate-50 transition">
+    sorted.forEach(u => {
+        container.insertAdjacentHTML('beforeend', `
+            <div class="p-4 flex justify-between items-start gap-3 hover:bg-slate-50 transition">
                 <div class="flex-1">
                     <div class="flex flex-wrap items-center gap-2">
-                        <h4 class="font-bold text-slate-800 text-sm ${task.status === 'done' ? 'line-through text-slate-400' : ''}">${task.title}</h4>
-                        <span class="inline-flex items-center gap-1 bg-indigo-50 text-indigo-700 text-xs px-2 py-0.5 rounded-full font-semibold">👤 ${task.responsible || 'לא הוגדר'}</span>
-                        ${categoryBadge}
+                        <h4 class="font-bold text-slate-800 text-sm ${u.statusClass}">${u.title}</h4>
+                        <span class="inline-flex items-center bg-slate-100 text-slate-600 text-[11px] px-2 py-0.5 rounded-full font-semibold">${u.badge}</span>
+                        <span class="inline-flex items-center ${u.color} text-[11px] px-2 py-0.5 rounded-full font-semibold">${u.action}</span>
                     </div>
-                    <p class="text-xs text-slate-400 mt-1 flex items-center gap-1">
-                        ⏱️ ${formatTimeAgo(task.createdAt)}
-                        ${task.notes ? `• 📌 ${task.notes}` : ''}
-                    </p>
-                </div>
-                <div class="flex items-center gap-2 self-end sm:self-auto">
-                    <button onclick="updateTaskStatus('${task.id}', 'todo')" class="px-2.5 py-1 rounded-full text-xs font-semibold border ${task.status === 'todo' ? 'bg-slate-200 border-slate-300 text-slate-800 font-bold' : 'bg-transparent border-slate-200 text-slate-400'}">ללא התחילה</button>
-                    <button onclick="updateTaskStatus('${task.id}', 'progress')" class="px-2.5 py-1 rounded-full text-xs font-semibold border ${task.status === 'progress' ? 'bg-amber-100 border-amber-300 text-amber-800 font-bold' : 'bg-transparent border-slate-200 text-slate-400'}">בתהליך</button>
-                    <button onclick="updateTaskStatus('${task.id}', 'done')" class="px-2.5 py-1 rounded-full text-xs font-semibold border ${task.status === 'done' ? 'bg-emerald-100 border-emerald-300 text-emerald-800 font-bold' : 'bg-transparent border-slate-200 text-slate-400'}">בוצע</button>
+                    ${u.subtitle ? `<p class="text-xs text-slate-400 mt-1">${u.subtitle}</p>` : ''}
+                    <p class="text-xs text-slate-400 mt-0.5">⏱️ ${formatTimeAgo(u.ts)}</p>
                 </div>
             </div>
-        `;
-        container.insertAdjacentHTML('beforeend', itemHtml);
+        `);
     });
 }
 
@@ -497,6 +549,7 @@ function renderCalls() {
                         <div>
                             <h3 class="font-extrabold text-slate-800 text-sm">${call.title}</h3>
                             <p class="text-xs text-indigo-600 font-semibold mt-0.5">${call.subtitle}</p>
+                            ${call.phone ? `<a href="tel:${call.phone}" class="inline-flex items-center gap-1 mt-1 text-xs font-bold text-emerald-600 hover:text-emerald-800">📞 ${call.phone}</a>` : ''}
                         </div>
                         <button onclick="toggleCallDone('${call.id}')" class="px-3 py-1 rounded-full text-xs font-bold border transition ${call.done ? 'bg-emerald-100 border-emerald-300 text-emerald-800' : 'bg-slate-100 border-slate-200 text-slate-500'}">
                             ${call.done ? '✅ טופל' : '📞 פתוח'}
@@ -548,7 +601,7 @@ function renderBudget() {
             const remaining = exp.totalAmount - expPaid;
 
             const itemHtml = `
-                <div class="p-5 border-b border-slate-100 space-y-3">
+                <div class="p-5 border-b border-slate-100 space-y-3" data-exp-id="${exp.id}">
                     <div class="flex justify-between items-start">
                         <div>
                             <h4 class="text-sm font-bold text-slate-800">${exp.name}</h4>
@@ -610,11 +663,12 @@ function renderLogistics(filter = 'all') {
         container.insertAdjacentHTML('beforeend', `
             <div class="bg-white p-4 rounded-xl border ${log.packed ? 'border-emerald-500' : 'border-slate-200'} shadow-sm">
                 <div class="flex justify-between items-start mb-2">
-                    <h4 class="font-bold text-sm cursor-pointer text-indigo-900" onclick="editLogName('${log.id}')">${log.name} ✏️</h4>
+                    <h4 id="logname-${log.id}" class="font-bold text-sm cursor-pointer text-indigo-900" onclick="editLogName('${log.id}')">${log.name} ✏️</h4>
                     <button onclick="deleteLogisticsKit('${log.id}')" class="text-red-400 hover:text-red-600 text-xs font-bold">מחק</button>
                 </div>
                 <div class="flex justify-between items-center mb-2">
                     <span class="text-[10px] text-slate-400 font-bold uppercase">${log.destination}</span>
+                    <span class="text-[10px] font-bold text-emerald-600">${log.items.filter(i=>i.checked).length}/${log.items.length} ✅</span>
                     <label class="flex items-center gap-1 text-[10px] font-bold text-emerald-700">
                         <input type="checkbox" ${log.packed ? 'checked' : ''} onchange="toggleKitPacked('${log.id}')"> הועבר ליעד
                     </label>
@@ -639,8 +693,19 @@ function renderLogistics(filter = 'all') {
 function renderMenu() {
     const container = document.getElementById('menuContainer');
     container.innerHTML = "";
-    
+    // Update active filter button
+    ['הכל','טבעוני','ללא גלוטן','מנת ילדים'].forEach(f => {
+        const btn = document.getElementById('menuFilter-' + f);
+        if (btn) {
+            btn.className = f === currentMenuFilter
+                ? 'px-3 py-1 rounded-full bg-indigo-600 text-white font-bold border border-indigo-600 shadow-sm'
+                : 'px-3 py-1 rounded-full bg-white border shadow-sm text-slate-700';
+        }
+    });
+    // Show empty state
     const meals = ["ערב שבת", "בוקר שבת", "סעודה שלישית"];
+    let hasItems = false;
+    
     meals.forEach(m => {
         let items = menu.filter(i => i.meal === m);
         if (currentMenuFilter === 'טבעוני') items = items.filter(i => i.vegan);
@@ -648,6 +713,7 @@ function renderMenu() {
         else if (currentMenuFilter === 'מנת ילדים') items = items.filter(i => i.cat === 'מנת ילדים');
         
         if (items.length > 0) {
+            hasItems = true;
             container.insertAdjacentHTML('beforeend', `<h4 class="font-bold text-indigo-900 mt-4 mb-2">${m}</h4>`);
             items.forEach(i => {
                 if (editingMenuId === i.id) {
@@ -683,6 +749,9 @@ function renderMenu() {
             });
         }
     });
+    if (!hasItems) {
+        container.innerHTML = `<div class="col-span-3 p-8 text-center text-slate-400 text-sm">אין מנות להצגה. הוסיפו מנות למעלה או שנו את הפילטר.</div>`;
+    }
 }
 
 function renderSchedule() {
@@ -932,7 +1001,8 @@ function showToast(message) {
 }
 
 function updateCountdown() {
-    const targetDate = new Date("2026-06-12T18:00:00"); // כניסת השבת
+    const dateStr = (typeof EVENT_CONFIG !== 'undefined') ? EVENT_CONFIG.eventDate : "2026-06-12T18:00:00";
+    const targetDate = new Date(dateStr);
     const now = new Date();
     const diff = targetDate - now;
 
@@ -943,8 +1013,13 @@ function updateCountdown() {
 
     const days = Math.floor(diff / (1000 * 60 * 60 * 24));
     const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-    
-    safeSetText('countdown', `${days} ימים ו-${hours} שעות`);
+    const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+
+    if (days === 0) {
+        safeSetText('countdown', `${hours} שעות ו-${minutes} דקות ⚡`);
+    } else {
+        safeSetText('countdown', `${days} ימים ו-${hours} שעות`);
+    }
 }
 
 function closeWaModal() {
@@ -1134,3 +1209,24 @@ function showUndoToast(message, undoFn) {
     toast.classList.remove('hidden');
     setTimeout(closeToast, 6000);
 }
+
+// ─── ניטור חיבור לאינטרנט ───────────────────────────────
+window.addEventListener('online', () => {
+    const indicator = document.getElementById('syncStatusIndicator');
+    if (isCloudConnected) return; // כבר מחובר לענן
+    safeSetText('syncStatusText', "חיבור אינטרנט זוהה — מתחבר מחדש לענן...");
+    if (indicator) indicator.className = "h-2.5 w-2.5 rounded-full bg-amber-500 animate-pulse";
+    // נסה להתחבר מחדש לענן
+    const savedConfig = localStorage.getItem('bm_firebaseConfig');
+    if (savedConfig) {
+        try { connectToFirebase(JSON.parse(savedConfig)); } catch(e) {}
+    }
+});
+
+window.addEventListener('offline', () => {
+    isCloudConnected = false;
+    const indicator = document.getElementById('syncStatusIndicator');
+    if (indicator) indicator.className = "h-2.5 w-2.5 rounded-full bg-red-500 animate-pulse";
+    safeSetText('syncStatusText', "⚠️ אין חיבור לאינטרנט — עובד במצב מקומי");
+    showToast("⚠️ אין חיבור לאינטרנט. השינויים נשמרים במכשיר זה בלבד.");
+});
