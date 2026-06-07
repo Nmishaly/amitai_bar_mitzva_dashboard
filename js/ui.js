@@ -516,8 +516,8 @@ function renderRooms() {
                 אין כרגע חדרים רשומים בוילה. הוסיפו חדר חדש למעלה!
             </div>
         `;
-        return;
-    }
+        // לא מחזירים כאן — ממשיכים לרנדר מיקומים חיצוניים ו-banner
+    } else {
 
     // Summary bar
     const totalBeds     = rooms.reduce((sum, r) => sum + (parseInt(r.capacity) || 0), 0);
@@ -648,7 +648,9 @@ function renderRooms() {
             </div>
         `;
         container.insertAdjacentHTML('beforeend', cardHtml);
-    });
+    }); // end rooms.forEach
+
+    } // end else (rooms.length > 0)
 
     // ─── מיקומים חיצוניים ───────────────────────────────────
     const extSection = document.getElementById('externalLocationsSection');
