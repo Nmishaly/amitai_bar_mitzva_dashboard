@@ -519,63 +519,129 @@ function renderRooms() {
         return;
     }
 
-    // Show overall occupancy summary
-    const totalBeds = rooms.reduce((sum, r) => sum + (parseInt(r.capacity) || 0), 0);
+    // Summary bar
+    const totalBeds     = rooms.reduce((sum, r) => sum + (parseInt(r.capacity) || 0), 0);
     const totalOccupied = rooms.reduce((sum, r) => sum + (r.guests ? r.guests.length : 0), 0);
+    const totalFree     = totalBeds - totalOccupied;
     const summaryEl = document.getElementById('roomsSummary');
     if (summaryEl) {
+        const pct = totalBeds > 0 ? Math.round((totalOccupied / totalBeds) * 100) : 0;
         summaryEl.innerHTML = `
-            <div class="bg-purple-50 border border-purple-100 rounded-xl px-4 py-3 flex items-center justify-between mb-4">
-                <span class="text-sm font-bold text-purple-900">🏨 סיכום תפוסה כוללת בוילה</span>
-                <span class="text-sm font-extrabold text-purple-700">${totalOccupied} מתוך ${totalBeds} מיטות תפוסות</span>
+            <div class="bg-white border border-purple-100 rounded-2xl px-5 py-4 mb-4 shadow-sm">
+                <div class="flex items-center justify-between mb-2 gap-2 flex-wrap">
+                    <span class="text-sm font-extrabold text-purple-900">🏨 תפוסה כוללת בווילה</span>
+                    <div class="flex items-center gap-2">
+                        <span class="text-sm font-extrabold ${totalFree === 0 ? 'text-rose-600' : 'text-emerald-600'}">
+                            ${totalFree === 0 ? '🔴 הווילה מלאה!' : `🟢 ${totalFree} מיטות פנויות`}
+                        </span>
+                        <button onclick="copyRoomsSummaryToClipboard()" class="flex items-center gap-1 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200 text-xs font-bold px-3 py-1.5 rounded-lg transition">
+                            📋 העתק לוואטסאפ
+                        </button>
+                    </div>
+                </div>
+                <div class="w-full bg-slate-100 h-2.5 rounded-full overflow-hidden">
+                    <div class="h-full rounded-full transition-all duration-500 ${pct >= 100 ? 'bg-rose-500' : pct >= 75 ? 'bg-amber-500' : 'bg-purple-500'}"
+                         style="width: ${pct}%"></div>
+                </div>
+                <div class="flex justify-between text-[11px] text-slate-400 font-semibold mt-1">
+                    <span>${totalOccupied} תפוסות</span>
+                    <span>${totalBeds} סה"כ מיטות</span>
+                </div>
             </div>
         `;
     }
 
+    // Unassigned banner — אורחים עם sleep:yes שעדיין לא שובצו לשום חדר
+    const allAssigned = [
+        ...rooms.flatMap(r => r.guests || []),
+        ...(typeof externalLocations !== 'undefined' ? externalLocations.flatMap(l => l.guests || []) : [])
+    ].map(n => n.trim().toLowerCase());
+    const sleepingGuests = (typeof rsvps !== 'undefined' ? rsvps : []).filter(g => g.sleep === 'yes');
+    const unassigned = sleepingGuests.filter(g => {
+        const fullName = g.name.trim().toLowerCase();
+        return !allAssigned.some(a => a.includes(fullName) || fullName.includes(a));
+    });
+    const banner = document.getElementById('unassignedBanner');
+    const bannerText = document.getElementById('unassignedText');
+    if (banner) {
+        if (unassigned.length > 0) {
+            banner.classList.remove('hidden');
+            if (bannerText) bannerText.textContent = `${unassigned.length} אורח${unassigned.length > 1 ? 'ים' : ''} ממתינ${unassigned.length > 1 ? 'ים' : ''} לשיבוץ: ${unassigned.map(g => g.name).join(', ')}`;
+        } else if (sleepingGuests.length > 0) {
+            banner.classList.remove('hidden');
+            banner.className = banner.className.replace('bg-rose-50 border-rose-200', 'bg-emerald-50 border-emerald-200');
+            if (bannerText) { bannerText.textContent = '✅ כל האורחים הלנים שובצו!'; bannerText.className = 'text-sm font-bold text-emerald-800'; }
+        } else {
+            banner.classList.add('hidden');
+        }
+    }
+
     rooms.forEach(room => {
         const currentGuests = room.guests || [];
+        const capacity      = parseInt(room.capacity) || 1;
         const occupiedCount = currentGuests.length;
-        const capacity = parseInt(room.capacity) || 1;
-        const progressPercent = Math.min(100, Math.round((occupiedCount / capacity) * 100));
+        const freeCount     = Math.max(0, capacity - occupiedCount);
+        const isFull        = occupiedCount >= capacity;
 
-        let guestsHtml = "";
-        if (currentGuests.length === 0) {
-            guestsHtml = `<p class="text-xs text-slate-400 italic">אין עדיין אורחים משובצים בחדר זה</p>`;
-        } else {
-            guestsHtml = currentGuests.map((guest, idx) => `
-                <div class="flex justify-between items-center bg-purple-50 text-purple-950 px-2.5 py-1.5 rounded-lg text-xs font-semibold">
-                    <span>👤 ${guest}</span>
-                    <button onclick="removeGuestFromRoom('${room.id}', ${idx})" class="text-slate-400 hover:text-red-500 transition text-[10px] font-bold">✕</button>
-                </div>
-            `).join("");
-        }
+        // Bed grid: 🛏️ per occupied slot, ➕ per free slot
+        const bedIcons = Array.from({ length: capacity }, (_, i) => {
+            if (i < occupiedCount) {
+                const guest = currentGuests[i];
+                return `<div class="relative group flex flex-col items-center cursor-default">
+                    <span class="text-xl" title="${guest}">🛏️</span>
+                    <span class="text-[9px] text-purple-700 font-bold leading-none max-w-[44px] truncate text-center">${guest.split(' ')[0]}</span>
+                    <button onclick="removeGuestFromRoom('${room.id}', ${i})"
+                        class="absolute -top-1 -right-1 w-3.5 h-3.5 bg-red-500 text-white rounded-full text-[8px] font-bold leading-none hidden group-hover:flex items-center justify-center">✕</button>
+                </div>`;
+            } else {
+                return `<div class="flex flex-col items-center opacity-30">
+                    <span class="text-xl">🛏️</span>
+                    <span class="text-[9px] text-slate-400 font-bold leading-none">פנוי</span>
+                </div>`;
+            }
+        }).join('');
+
+        // Card border color by status
+        const borderClass = isFull
+            ? 'border-rose-200'
+            : freeCount === capacity ? 'border-slate-200' : 'border-purple-200';
+
+        const badgeBg = isFull
+            ? 'bg-rose-50 text-rose-700 border-rose-200'
+            : 'bg-emerald-50 text-emerald-700 border-emerald-200';
 
         const cardHtml = `
-            <div class="bg-white rounded-2xl shadow-sm border border-slate-100 p-5 flex flex-col justify-between hover:shadow-md transition">
-                <div>
-                    <div class="flex justify-between items-start mb-2">
-                        <div>
-                            <h3 class="font-extrabold text-slate-800 text-sm">${room.name}</h3>
-                            <span class="text-xs text-purple-600 font-bold">${occupiedCount} מתוך ${capacity} מיטות תפוסות</span>
-                        </div>
-                        <button onclick="deleteRoom('${room.id}')" class="text-slate-300 hover:text-red-500 transition text-xs font-semibold" title="מחק חדר">🗑️</button>
-                    </div>
+            <div class="bg-white rounded-2xl shadow-sm border ${borderClass} p-4 flex flex-col gap-3 hover:shadow-md transition-shadow">
 
-                    <!-- Progress Bar -->
-                    <div class="w-full bg-slate-100 h-2 rounded-full mb-4 overflow-hidden">
-                        <div class="bg-purple-600 h-full transition-all duration-300" style="width: ${progressPercent}%"></div>
+                <!-- Header -->
+                <div class="flex items-start justify-between gap-2">
+                    <div>
+                        <h3 class="font-extrabold text-slate-800 text-sm leading-snug">${room.name}</h3>
+                        <span class="inline-flex items-center gap-1 mt-1 text-[11px] font-bold px-2 py-0.5 rounded-full border ${badgeBg}">
+                            ${isFull ? '🔴 מלא' : `🟢 ${freeCount} פנוי${freeCount !== 1 ? 'ות' : ''}`}
+                            &nbsp;·&nbsp; ${occupiedCount}/${capacity} מיטות
+                        </span>
                     </div>
-
-                    <!-- Guests List -->
-                    <div class="space-y-1.5 mb-4 max-h-36 overflow-y-auto">
-                        ${guestsHtml}
-                    </div>
+                    <button onclick="deleteRoom('${room.id}')" class="text-slate-300 hover:text-red-500 transition p-1 rounded-lg hover:bg-red-50" title="מחק חדר">🗑️</button>
                 </div>
 
-                <!-- Add Guest Form -->
-                <div class="border-t border-slate-100 pt-3 flex gap-2">
-                    <input type="text" id="guestInput_${room.id}" placeholder="שם האורח לשבוץ..." class="flex-1 p-2 border border-slate-200 rounded-lg text-xs focus:ring-1 focus:ring-purple-500 focus:outline-none">
-                    <button onclick="addGuestToRoom('${room.id}')" class="bg-purple-600 hover:bg-purple-700 text-white font-bold px-3 py-2 rounded-lg text-xs transition shadow-sm">
+                <!-- Bed grid -->
+                <div class="flex flex-wrap gap-3 bg-slate-50 rounded-xl p-3 min-h-[64px] items-start">
+                    ${bedIcons}
+                </div>
+
+                <!-- Add guest -->
+                <div class="flex gap-2">
+                    <input type="text"
+                        id="guestInput_${room.id}"
+                        placeholder="${isFull ? 'החדר מלא' : 'שם האורח לשיבוץ...'}"
+                        ${isFull ? 'disabled' : ''}
+                        onkeydown="if(event.key==='Enter') addGuestToRoom('${room.id}')"
+                        class="flex-1 p-2 border border-slate-200 rounded-lg text-xs focus:ring-1 focus:ring-purple-500 focus:outline-none ${isFull ? 'bg-slate-100 text-slate-400 cursor-not-allowed' : 'bg-white'}">
+                    <button onclick="addGuestToRoom('${room.id}')"
+                        ${isFull ? 'disabled' : ''}
+                        class="font-bold px-3 py-2 rounded-lg text-xs transition shadow-sm
+                               ${isFull ? 'bg-slate-200 text-slate-400 cursor-not-allowed' : 'bg-purple-600 hover:bg-purple-700 text-white'}">
                         שבץ
                     </button>
                 </div>
@@ -583,6 +649,57 @@ function renderRooms() {
         `;
         container.insertAdjacentHTML('beforeend', cardHtml);
     });
+
+    // ─── מיקומים חיצוניים ───────────────────────────────────
+    const extSection = document.getElementById('externalLocationsSection');
+    const extContainer = document.getElementById('externalLocationsContainer');
+    const extLocs = (typeof externalLocations !== 'undefined') ? externalLocations : [];
+
+    if (extSection && extContainer) {
+        extContainer.innerHTML = '';
+        if (extLocs.length === 0) {
+            extSection.classList.add('hidden');
+        } else {
+            extSection.classList.remove('hidden');
+            extLocs.forEach(loc => {
+                const guests = loc.guests || [];
+                const guestChips = guests.map((g, i) => `
+                    <div class="relative group flex flex-col items-center cursor-default">
+                        <span class="text-xl">🏠</span>
+                        <span class="text-[9px] text-teal-700 font-bold leading-none max-w-[44px] truncate text-center">${g.split(' ')[0]}</span>
+                        <button onclick="removeGuestFromExtLocation('${loc.id}', ${i})"
+                            class="absolute -top-1 -right-1 w-3.5 h-3.5 bg-red-500 text-white rounded-full text-[8px] font-bold leading-none hidden group-hover:flex items-center justify-center">✕</button>
+                    </div>`).join('');
+                const emptySlots = guests.length === 0
+                    ? `<span class="text-xs text-slate-400 italic">אין אורחים משובצים עדיין</span>`
+                    : '';
+
+                extContainer.insertAdjacentHTML('beforeend', `
+                    <div class="bg-white rounded-2xl shadow-sm border border-teal-200 p-4 flex flex-col gap-3 hover:shadow-md transition-shadow">
+                        <div class="flex items-start justify-between gap-2">
+                            <div>
+                                <h3 class="font-extrabold text-teal-900 text-sm leading-snug">${loc.name}</h3>
+                                <span class="text-[11px] font-bold text-teal-600 mt-0.5">🏘️ מיקום חיצוני · ${guests.length} אורחים</span>
+                            </div>
+                            <button onclick="deleteExternalLocation('${loc.id}')" class="text-slate-300 hover:text-red-500 transition p-1 rounded-lg hover:bg-red-50">🗑️</button>
+                        </div>
+                        <div class="flex flex-wrap gap-3 bg-teal-50/60 rounded-xl p-3 min-h-[56px] items-start">
+                            ${guestChips}${emptySlots}
+                        </div>
+                        <div class="flex gap-2">
+                            <input type="text" id="extGuestInput_${loc.id}" placeholder="הוסף אורח..."
+                                onkeydown="if(event.key==='Enter') addGuestToExtLocation('${loc.id}')"
+                                class="flex-1 p-2 border border-slate-200 rounded-lg text-xs focus:ring-1 focus:ring-teal-500 focus:outline-none bg-white">
+                            <button onclick="addGuestToExtLocation('${loc.id}')"
+                                class="bg-teal-600 hover:bg-teal-700 text-white font-bold px-3 py-2 rounded-lg text-xs transition shadow-sm">
+                                שבץ
+                            </button>
+                        </div>
+                    </div>
+                `);
+            });
+        }
+    }
 
     calculateStats();
 }
@@ -606,7 +723,6 @@ function renderCalls() {
                             ${call.done ? '✅ טופל' : '📞 פתוח'}
                         </button>
                     </div>
-                    
                     <div class="mt-3">
                         <label class="text-[10px] text-slate-400 font-bold block mb-1">הערות וסיכום:</label>
                         <textarea onblur="updateCallNotes('${call.id}', this.value)" placeholder="הקלידו כאן מידע חשוב..." class="w-full p-2.5 border border-slate-200 rounded-xl text-xs focus:ring-1 focus:ring-indigo-500 focus:outline-none bg-slate-50" rows="3">${call.notes || ''}</textarea>

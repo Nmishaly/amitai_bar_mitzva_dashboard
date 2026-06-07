@@ -59,6 +59,7 @@ let tasks = JSON.parse(localStorage.getItem('bm_tasks')) || defaultTasks;
 let shopping = JSON.parse(localStorage.getItem('bm_shopping')) || defaultShopping;
 let calls = JSON.parse(localStorage.getItem('bm_calls')) || defaultCalls;
 let rooms = JSON.parse(localStorage.getItem('bm_rooms')) || defaultRooms;
+let externalLocations = JSON.parse(localStorage.getItem('bm_externalLocations')) || [];
 let rsvps = JSON.parse(localStorage.getItem('bm_rsvps')) || [];
 let budget = JSON.parse(localStorage.getItem('bm_budget')) || [];
 let logistics = JSON.parse(localStorage.getItem('bm_logistics')) || [];
@@ -88,7 +89,8 @@ function saveLocalState() {
         'bm_budget': budget,
         'bm_logistics': logistics,
         'bm_menu': menu,
-        'bm_schedule': schedule
+        'bm_schedule': schedule,
+        'bm_externalLocations': externalLocations
     };
 
     try {
@@ -1235,3 +1237,84 @@ window.onload = function() {
     setTimeout(hideLoadingOverlay, 2500);
 };
 
+
+// ─── מיקומים חיצוניים (שכנים וכו') ──────────────────────────
+async function addExternalLocation() {
+    const nameEl = document.getElementById('newExtLocationName');
+    const guestsEl = document.getElementById('newExtLocationGuests');
+    if (!nameEl) return;
+    const name = nameEl.value.trim();
+    const guestsRaw = guestsEl ? guestsEl.value.trim() : '';
+    if (!name) { showToast('יש להזין שם מיקום!'); return; }
+
+    const guests = guestsRaw ? guestsRaw.split(',').map(g => g.trim()).filter(Boolean) : [];
+    const loc = { id: 'ext_' + Date.now(), name, guests };
+    externalLocations.push(loc);
+    saveLocalState();
+    renderRooms();
+    if (isCloudConnected && db) dbSet('externalLocations', loc.id, loc);
+    nameEl.value = '';
+    if (guestsEl) guestsEl.value = '';
+    showToast('מיקום חיצוני נוסף!');
+}
+
+async function deleteExternalLocation(locId) {
+    if (!confirm('למחוק מיקום זה?')) return;
+    externalLocations = externalLocations.filter(l => l.id !== locId);
+    saveLocalState();
+    renderRooms();
+    if (isCloudConnected && db) dbDelete('externalLocations', locId);
+    showToast('המיקום הוסר');
+}
+
+async function addGuestToExtLocation(locId) {
+    const inputEl = document.getElementById('extGuestInput_' + locId);
+    if (!inputEl) return;
+    const name = inputEl.value.trim();
+    if (!name) { showToast('יש להזין שם אורח!'); return; }
+    const loc = externalLocations.find(l => l.id === locId);
+    if (!loc) return;
+    loc.guests = [...(loc.guests || []), name];
+    saveLocalState();
+    renderRooms();
+    if (isCloudConnected && db) dbUpdate('externalLocations', locId, { guests: loc.guests });
+    inputEl.value = '';
+    showToast(`${name} שובץ!`);
+}
+
+async function removeGuestFromExtLocation(locId, idx) {
+    const loc = externalLocations.find(l => l.id === locId);
+    if (!loc) return;
+    const removed = loc.guests.splice(idx, 1)[0];
+    saveLocalState();
+    renderRooms();
+    if (isCloudConnected && db) dbUpdate('externalLocations', locId, { guests: loc.guests });
+    showToast(`${removed} הוסר`);
+}
+
+function copyRoomsSummaryToClipboard() {
+    let text = '🏡 חלוקת לינה — שבת בר מצווה אמיתי\n\n';
+    text += '🏠 וילה:\n';
+    rooms.forEach(r => {
+        const guests = (r.guests || []);
+        text += `  ${r.name} (${guests.length}/${r.capacity}):\n`;
+        guests.forEach(g => text += `    • ${g}\n`);
+        if (guests.length === 0) text += `    — ריק\n`;
+    });
+    if (externalLocations.length > 0) {
+        text += '\n🏘️ מיקומים חיצוניים:\n';
+        externalLocations.forEach(l => {
+            text += `  ${l.name}:\n`;
+            (l.guests || []).forEach(g => text += `    • ${g}\n`);
+            if ((l.guests || []).length === 0) text += `    — ריק\n`;
+        });
+    }
+    if (navigator.clipboard) {
+        navigator.clipboard.writeText(text).then(() => showToast('חלוקת הלינה הועתקה! 📋'));
+    } else {
+        const ta = document.createElement('textarea');
+        ta.value = text; document.body.appendChild(ta); ta.select();
+        document.execCommand('copy'); document.body.removeChild(ta);
+        showToast('חלוקת הלינה הועתקה! 📋');
+    }
+}

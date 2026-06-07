@@ -524,21 +524,24 @@
 
         <!-- TAB: VILLA ROOM ASSIGNMENT (חדרים בוילה) -->
         <section id="content-rooms" class="hidden space-y-6">
-            <div class="bg-purple-50 border border-purple-100 rounded-2xl p-4 flex items-start gap-3">
-                <span class="text-xl">🏨</span>
-                <p class="text-sm text-purple-950 font-medium">
-                    כאן תוכלו לנהל את חלוקת החדרים בוילה המשותפת. רשמו אילו חדרים קיימים, הגדירו את קיבולת המיטות ושבצו את האורחים כדי שלכולם יהיה מקום מושלם לישון בשבת!
-                </p>
+
+            <!-- Unassigned guests badge -->
+            <div id="unassignedBanner" class="hidden bg-rose-50 border border-rose-200 rounded-2xl px-4 py-3 flex items-center justify-between gap-3">
+                <div class="flex items-center gap-2">
+                    <span class="text-lg">🔴</span>
+                    <span class="text-sm font-bold text-rose-800" id="unassignedText">אורחים ממתינים לשיבוץ</span>
+                </div>
+                <button onclick="switchTab('rsvp')" class="text-xs font-bold text-rose-700 underline hover:text-rose-900 transition">לטאב אורחים ←</button>
             </div>
 
-            <!-- Add Room Form -->
+            <!-- Add Villa Room -->
             <div class="bg-white p-4 rounded-2xl shadow-sm border border-slate-100">
-                <h3 class="font-bold text-slate-800 mb-2 flex items-center gap-2">
-                    <span class="text-purple-600 text-lg">➕</span> הוספת חדר חדש בוילה
+                <h3 class="font-bold text-slate-800 mb-3 flex items-center gap-2">
+                    <span class="text-purple-600 text-lg">🏠</span> הוספת חדר בוילה
                 </h3>
                 <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                    <input type="text" id="newRoomName" placeholder="שם החדר (לדוגמה: סוויטה ראשית, גלריה למעלה)" class="col-span-1 sm:col-span-2 p-2.5 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-purple-500 focus:outline-none font-medium">
-                    <input type="number" id="newRoomCapacity" placeholder="כמות מיטות/מזרנים" class="p-2.5 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-purple-500 focus:outline-none font-medium">
+                    <input type="text" id="newRoomName" placeholder="שם החדר (לדוגמה: סוויטה ראשית)" class="col-span-1 sm:col-span-2 p-2.5 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-purple-500 focus:outline-none font-medium">
+                    <input type="number" id="newRoomCapacity" placeholder="כמות מיטות" class="p-2.5 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-purple-500 focus:outline-none font-medium">
                 </div>
                 <div class="flex justify-end mt-3">
                     <button onclick="addNewRoom()" class="bg-purple-600 hover:bg-purple-700 text-white font-bold py-2 px-6 rounded-lg text-sm transition shadow">
@@ -547,9 +550,38 @@
                 </div>
             </div>
 
-            <!-- Rooms Grid List -->
+            <!-- Add External Location -->
+            <div class="bg-white p-4 rounded-2xl shadow-sm border border-teal-100">
+                <h3 class="font-bold text-slate-800 mb-3 flex items-center gap-2">
+                    <span class="text-teal-600 text-lg">🏘️</span> הוספת מיקום חיצוני (שכנים, קרובי משפחה וכו')
+                </h3>
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <input type="text" id="newExtLocationName" placeholder="שם המיקום (לדוגמה: בית השכנים)" class="p-2.5 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-teal-500 focus:outline-none font-medium">
+                    <input type="text" id="newExtLocationGuests" placeholder='שמות (מופרדים בפסיק, אפשר להוסיף אח"כ)' class="p-2.5 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-teal-500 focus:outline-none font-medium">
+                </div>
+                <div class="flex justify-end mt-3">
+                    <button onclick="addExternalLocation()" class="bg-teal-600 hover:bg-teal-700 text-white font-bold py-2 px-6 rounded-lg text-sm transition shadow">
+                        הוסף מיקום חיצוני
+                    </button>
+                </div>
+            </div>
+
+            <!-- Summary + copy button -->
             <div id="roomsSummary"></div>
+
+            <!-- Villa Rooms Grid -->
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4" id="roomsContainer"></div>
+
+            <!-- External Locations Section -->
+            <div id="externalLocationsSection" class="hidden space-y-3">
+                <div class="flex items-center justify-between">
+                    <h3 class="font-extrabold text-teal-900 flex items-center gap-2 text-sm">
+                        <span>🏘️</span> מיקומים חיצוניים
+                    </h3>
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4" id="externalLocationsContainer"></div>
+            </div>
+
         </section>
 
         <!-- TAB: BUDGET MANAGEMENT (ניהול תקציב לשבת) -->
@@ -959,5 +991,6 @@ const firebaseConfig = {
             <button onclick="closeToast()" class="text-slate-400 hover:text-white transition shrink-0 text-lg leading-none">✕</button>
         </div>
     </div>
+</body>
 </html>
 
