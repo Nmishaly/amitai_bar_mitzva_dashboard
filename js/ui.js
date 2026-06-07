@@ -42,8 +42,10 @@ function formatTimeAgo(timestamp) {
 }
 
 function calculateStats() {
-    const totalTasks = tasks.length;
-    const completedTasks = tasks.filter(t => t.status === 'done').length;
+    // Exclude 'alon' category — it has its own tab, shouldn't skew main progress
+    const mainTasks = tasks.filter(t => t.category !== 'alon');
+    const totalTasks = mainTasks.length;
+    const completedTasks = mainTasks.filter(t => t.status === 'done').length;
     const percent = totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0;
 
     const circle = document.getElementById('progressRing');
@@ -104,6 +106,10 @@ function renderTasks() {
     } else if (statusFilter === 'completed') {
         generalTasks = generalTasks.filter(t => t.status === 'done');
     }
+
+    // Refresh TODAY_BASELINE dynamically each render
+    TODAY_BASELINE.setTime(Date.now());
+    TODAY_BASELINE.setHours(0, 0, 0, 0);
 
     // If sorted list mode is selected, sort them by date ascending
     if (taskViewMode === 'sorted') {
@@ -1196,6 +1202,10 @@ function updateMaxBudget(value) {
     const display = document.getElementById('budgetMaxDisplay');
     if (display) display.textContent = maxBudget.toLocaleString() + ' ₪';
     renderBudget();
+    // Sync to cloud so all devices see the same budget
+    if (typeof isCloudConnected !== 'undefined' && isCloudConnected && typeof db !== 'undefined' && db) {
+        dbUpdate('_settings', 'app', { maxBudget: newMax });
+    }
 }
 
 // Undo delete support

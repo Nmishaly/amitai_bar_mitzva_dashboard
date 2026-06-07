@@ -51,23 +51,44 @@ function handleFirestoreError(error, context) {
 }
 
 async function seedCloud() {
-    console.log("Cloud is empty. Seeding local defaults to cloud...");
+    // Race condition guard: check a seed-lock document first
+    const lockRef = getCollectionRef('_meta').doc('seedLock');
     try {
-        const batch = db.batch();
-        tasks.forEach(task => {
-            batch.set(getCollectionRef('tasks').doc(task.id), task);
-        });
-        shopping.forEach(item => {
-            batch.set(getCollectionRef('shopping').doc(item.id), item);
-        });
-        calls.forEach(call => {
-            batch.set(getCollectionRef('calls').doc(call.id), call);
-        });
-        rooms.forEach(room => {
-            batch.set(getCollectionRef('rooms').doc(room.id), room);
-        });
-        await batch.commit();
-        console.log("Cloud successfully seeded!");
+        const lockDoc = await lockRef.get();
+        if (lockDoc.exists) {
+            console.log("Seed already in progress or done by another device. Skipping.");
+            return;
+        }
+        // Set lock immediately before seeding
+        await lockRef.set({ seededAt: Date.now(), seededBy: navigator.userAgent.slice(0, 50) });
+    } catch(e) {
+        console.warn("Could not acquire seed lock:", e);
+    }
+
+    console.log("Cloud is empty. Seeding all local defaults to cloud...");
+    try {
+        // Firestore batch limit is 500 — split if needed
+        const allItems = [
+            ...tasks.map(d => ({ col: 'tasks', doc: d })),
+            ...shopping.map(d => ({ col: 'shopping', doc: d })),
+            ...calls.map(d => ({ col: 'calls', doc: d })),
+            ...rooms.map(d => ({ col: 'rooms', doc: d })),
+            ...rsvps.map(d => ({ col: 'rsvps', doc: d })),
+            ...budget.map(d => ({ col: 'budget', doc: d })),
+            ...logistics.map(d => ({ col: 'logistics', doc: d })),
+            ...menu.map(d => ({ col: 'menu', doc: d })),
+            ...schedule.map(d => ({ col: 'schedule', doc: d })),
+        ];
+
+        // Split into batches of 400
+        for (let i = 0; i < allItems.length; i += 400) {
+            const batch = db.batch();
+            allItems.slice(i, i + 400).forEach(({ col, doc }) => {
+                batch.set(getCollectionRef(col).doc(doc.id), doc);
+            });
+            await batch.commit();
+        }
+        console.log("Cloud successfully seeded with all collections!");
     } catch (e) {
         console.error("Error seeding cloud:", e);
     }
@@ -94,7 +115,7 @@ function startFirebaseListeners() {
         }
         logistics = cloudLogistics;
         localStorage.setItem('bm_logistics', JSON.stringify(logistics));
-        if (currentTab === 'logistics') renderLogistics();
+        if (currentTab === 'logistics') renderLogistics(currentLogisticsFilter);
     }, error => {
         handleFirestoreError(error, "לוגיסטיקה");
     });
@@ -106,10 +127,7 @@ function startFirebaseListeners() {
         snapshot.forEach(doc => cloudSchedule.push(doc.data()));
         schedule = cloudSchedule;
         localStorage.setItem('bm_schedule', JSON.stringify(schedule));
-        
-        // זה יקרה אוטומטית בכל פעם שיש שינוי בענן, 
-        // וזה יחליף את כל התצוגה בלי כפילויות
-        if (document.getElementById('content-schedule')) renderSchedule(); 
+        if (currentTab === 'schedule') renderSchedule();
     }, error => {
         handleFirestoreError(error, "לו\"ז");
     });
@@ -144,8 +162,8 @@ function startFirebaseListeners() {
         }
         tasks = cloudTasks;
         localStorage.setItem('bm_tasks', JSON.stringify(tasks));
-        renderTasks();
-        renderRecentTasks();
+        if (currentTab === 'tasks') renderTasks();
+        if (currentTab === 'recent') renderRecentTasks();
     }, error => {
         handleFirestoreError(error, "משימות");
     });
@@ -160,7 +178,7 @@ function startFirebaseListeners() {
         }
         shopping = cloudShopping;
         localStorage.setItem('bm_shopping', JSON.stringify(shopping));
-        renderShopping();
+        if (currentTab === 'shopping') renderShopping();
     }, error => {
         handleFirestoreError(error, "קניות");
     });
@@ -190,7 +208,7 @@ function startFirebaseListeners() {
         }
         calls = cloudCalls;
         localStorage.setItem('bm_calls', JSON.stringify(calls));
-        renderCalls();
+        if (currentTab === 'calls') renderCalls();
     }, error => {
         handleFirestoreError(error, "בירורים");
     });
@@ -205,9 +223,28 @@ function startFirebaseListeners() {
         }
         rsvps = cloudRsvps;
         localStorage.setItem('bm_rsvps', JSON.stringify(rsvps));
-        renderRsvps();
+        if (currentTab === 'rsvp') renderRsvps();
     }, error => {
         handleFirestoreError(error, "אישורי הגעה");
+    });
+
+    // Settings snapshot (maxBudget + shared settings)
+    const settingsRef = getCollectionRef('_settings').doc('app');
+    settingsRef.onSnapshot(snapshot => {
+        if (snapshot.exists) {
+            const data = snapshot.data();
+            if (data.maxBudget && typeof maxBudget !== 'undefined') {
+                maxBudget = data.maxBudget;
+                localStorage.setItem('bm_maxBudget', maxBudget);
+                const maxInput = document.getElementById('maxBudgetInput');
+                const maxDisplay = document.getElementById('budgetMaxDisplay');
+                if (maxInput) maxInput.value = maxBudget;
+                if (maxDisplay) maxDisplay.textContent = maxBudget.toLocaleString() + ' ₪';
+                if (currentTab === 'budget') renderBudget();
+            }
+        }
+    }, error => {
+        handleFirestoreError(error, "הגדרות");
     });
 
     // Budget snapshot
@@ -220,13 +257,19 @@ function startFirebaseListeners() {
         }
         budget = cloudBudget;
         localStorage.setItem('bm_budget', JSON.stringify(budget));
-        renderBudget();
+        if (currentTab === 'budget') renderBudget();
     }, error => {
         handleFirestoreError(error, "תקציב");
     });
 }
 
+let _isConnecting = false;
 async function connectToFirebase(config) {
+    if (_isConnecting) {
+        console.warn("connectToFirebase already in progress, skipping.");
+        return;
+    }
+    _isConnecting = true;
     try {
         if (firebase.apps.length > 0) {
             await firebase.app().delete();
@@ -260,44 +303,27 @@ async function connectToFirebase(config) {
         
         safeSetText('syncStatusText', "שגיאת חיבור לענן: " + error.message);
         showToast("שגיאה בהתחברות לענן! נסו לבדוק את הגדרות הקונפיגורציה.");
+    } finally {
+        _isConnecting = false;
     }
 }
 
 function parseFirebaseConfig(text) {
+    // Secure parser — regex only, no eval/new Function
+    if (!text) return null;
     text = text.trim();
-    
-    const firstBrace = text.indexOf('{');
-    const lastBrace = text.lastIndexOf('}');
-    if (firstBrace !== -1 && lastBrace !== -1 && lastBrace > firstBrace) {
-        text = text.substring(firstBrace, lastBrace + 1);
-    }
-    
-    try {
-        const parsed = new Function(`return (${text})`)();
-        if (parsed && typeof parsed === 'object' && parsed.apiKey) {
-            return parsed;
-        }
-    } catch (e) {
-        console.warn("Function parser fallback triggered.", e);
-    }
-    
     try {
         const config = {};
         const keys = ['apiKey', 'authDomain', 'projectId', 'storageBucket', 'messagingSenderId', 'appId'];
         keys.forEach(key => {
-            const regex = new RegExp(`['"]?${key}['"]?\\s*:\\s*['"]([^'"]+)['"]`);
+            const regex = new RegExp(`['"]?${key}['"]?\s*:\s*['"]([^'"]+)['"]`);
             const match = text.match(regex);
-            if (match && match[1]) {
-                config[key] = match[1];
-            }
+            if (match && match[1]) config[key] = match[1];
         });
-        if (config.apiKey && config.projectId) {
-            return config;
-        }
+        if (config.apiKey && config.projectId) return config;
     } catch (err) {
-        console.error("All parsers failed", err);
+        console.error("Config parser failed", err);
     }
-    
     return null;
 }
 
