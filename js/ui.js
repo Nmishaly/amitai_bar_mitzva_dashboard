@@ -109,8 +109,8 @@ function renderTasks() {
     if (taskViewMode === 'sorted') {
         generalTasks.sort((a, b) => {
             const da = a.deadline ? new Date(a.deadline + "T00:00:00") : new Date("2099-12-31");
-            const db = b.deadline ? new Date(b.deadline + "T00:00:00") : new Date("2099-12-31");
-            return da - db;
+            const dateB = b.deadline ? new Date(b.deadline + "T00:00:00") : new Date("2099-12-31");
+            return da - dateB;
         });
     }
 
