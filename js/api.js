@@ -261,6 +261,20 @@ function startFirebaseListeners() {
     }, error => {
         handleFirestoreError(error, "תקציב");
     });
+
+    // External Locations snapshot
+    const extLocRef = getCollectionRef('externalLocations');
+    extLocRef.onSnapshot(snapshot => {
+        const cloudExtLocs = [];
+        if (!snapshot.empty) {
+            snapshot.forEach(doc => cloudExtLocs.push(doc.data()));
+        }
+        externalLocations = cloudExtLocs;
+        localStorage.setItem('bm_externalLocations', JSON.stringify(externalLocations));
+        if (currentTab === 'rooms') renderRooms();
+    }, error => {
+        handleFirestoreError(error, "מיקומים חיצוניים");
+    });
 }
 
 let _isConnecting = false;
