@@ -68,11 +68,39 @@ function calculateStats() {
 
     const totalShopping = shopping.length;
     const boughtShopping = shopping.filter(s => s.bought).length;
-    safeSetText('statShopping', `${boughtShopping} / ${totalShopping}`);
+    safeSetText('statShopping', `${boughtShopping}/${totalShopping}`);
 
     const totalCalls = calls.length;
     const closedCalls = calls.filter(c => c.done).length;
-    safeSetText('statCalls', `${closedCalls} / ${totalCalls}`);
+    safeSetText('statCalls', `${closedCalls}/${totalCalls}`);
+
+    // Days to event
+    const daysEl = document.getElementById('statDaysLeft');
+    const daysCard = document.getElementById('statDaysCard');
+    if (daysEl) {
+        const eventDate = new Date((typeof EVENT_CONFIG !== 'undefined') ? EVENT_CONFIG.eventDate : "2026-06-12T18:00:00");
+        const daysLeft = Math.ceil((eventDate - Date.now()) / (1000 * 60 * 60 * 24));
+        if (daysLeft <= 0) {
+            daysEl.textContent = '🎉 היום!';
+            if (daysCard) daysCard.className = daysCard.className.replace('bg-indigo-50 border-indigo-100', 'bg-amber-50 border-amber-200');
+        } else {
+            daysEl.textContent = daysLeft;
+            // Urgency coloring
+            if (daysCard) {
+                if (daysLeft <= 3) {
+                    daysCard.className = 'flex items-center gap-3 bg-red-50 border border-red-200 rounded-xl px-3 py-3';
+                } else if (daysLeft <= 7) {
+                    daysCard.className = 'flex items-center gap-3 bg-amber-50 border border-amber-200 rounded-xl px-3 py-3';
+                } else {
+                    daysCard.className = 'flex items-center gap-3 bg-indigo-50 border border-indigo-100 rounded-xl px-3 py-3';
+                }
+            }
+        }
+    }
+
+    // Total guests from rsvps
+    const totalGuests = rsvps.reduce((sum, g) => sum + g.adults + g.kids, 0);
+    safeSetText('statGuests', totalGuests);
 }
 
 function renderTasks() {
@@ -150,30 +178,47 @@ function renderTasks() {
                 </div>
             `;
         } else {
-            // Render Normal View Mode
+            // Render Normal View Mode — improved card design
             const formattedDate = task.deadline ? formatDateDisplay(task.deadline) : "ללא תאריך יעד";
+
+            // Status-based styling
+            const statusStyles = {
+                'todo':     { border: 'border-r-slate-300',   bg: '',                    dot: '⚪' },
+                'progress': { border: 'border-r-amber-400',   bg: 'bg-amber-50/40',      dot: '🟡' },
+                'done':     { border: 'border-r-emerald-400', bg: 'bg-emerald-50/50',    dot: '✅' }
+            };
+            const style = statusStyles[task.status] || statusStyles['todo'];
+
+            // Segmented control — active segment highlighted, others muted
+            const seg = (val, label, activeClass) => {
+                const isActive = task.status === val;
+                return `<button onclick="updateTaskStatus('${task.id}', '${val}')"
+                    class="px-2.5 py-1 text-[11px] font-bold transition-all rounded-md ${isActive ? activeClass : 'text-slate-400 hover:text-slate-600'}">
+                    ${label}
+                </button>`;
+            };
+
             itemHtml = `
-                <div class="p-4 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 hover:bg-slate-50 transition">
-                    <div class="flex-1">
-                        <div class="flex flex-wrap items-center gap-2">
-                            <h4 class="font-bold text-slate-800 text-sm ${task.status === 'done' ? 'line-through text-slate-400' : ''}">${task.title}</h4>
+                <div class="flex border-r-4 ${style.border} ${style.bg} hover:brightness-95 transition-all duration-150">
+                    <div class="flex-1 px-4 py-3 min-w-0">
+                        <h4 class="font-bold text-sm leading-snug ${task.status === 'done' ? 'line-through text-slate-400' : 'text-slate-800'}">${task.title}</h4>
+                        <div class="flex flex-wrap items-center gap-1.5 mt-1.5">
                             <span class="inline-flex items-center gap-1 bg-indigo-50 text-indigo-700 text-[11px] px-2 py-0.5 rounded-full font-semibold">👤 ${task.responsible || 'לא הוגדר'}</span>
                             <span class="inline-flex items-center gap-1 bg-rose-50 text-rose-700 text-[11px] px-2 py-0.5 rounded-full font-semibold">📅 ${formattedDate}</span>
+                            ${task.notes ? `<span class="text-[11px] text-slate-400 truncate max-w-[200px]">📌 ${task.notes}</span>` : ''}
                         </div>
-                        ${task.notes ? `<p class="text-xs text-slate-400 mt-1 flex items-center gap-1">📌 ${task.notes}</p>` : ''}
                     </div>
-                    <div class="flex items-center gap-2 self-end sm:self-auto">
-                        <button onclick="updateTaskStatus('${task.id}', 'todo')" class="px-2.5 py-1 rounded-full text-xs font-semibold border ${task.status === 'todo' ? 'bg-slate-200 border-slate-300 text-slate-800 font-bold' : 'bg-transparent border-slate-200 text-slate-400'}">ללא התחילה</button>
-                        <button onclick="updateTaskStatus('${task.id}', 'progress')" class="px-2.5 py-1 rounded-full text-xs font-semibold border ${task.status === 'progress' ? 'bg-amber-100 border-amber-300 text-amber-800 font-bold' : 'bg-transparent border-slate-200 text-slate-400'}">בתהליך</button>
-                        <button onclick="updateTaskStatus('${task.id}', 'done')" class="px-2.5 py-1 rounded-full text-xs font-semibold border ${task.status === 'done' ? 'bg-emerald-100 border-emerald-300 text-emerald-800 font-bold' : 'bg-transparent border-slate-200 text-slate-400'}">בוצע</button>
-                        
-                        <div class="flex items-center gap-1 pr-1 border-r border-slate-100 font-bold">
-                            <button onclick="startEditTask('${task.id}')" class="p-1.5 text-slate-300 hover:text-indigo-600 transition rounded-md hover:bg-indigo-50" title="עריכת משימה">
-                                ✏️
-                            </button>
-                            <button onclick="deleteTask('${task.id}')" class="p-1.5 text-slate-300 hover:text-red-500 transition rounded-md hover:bg-red-50" title="מחיקת משימה">
-                                🗑️
-                            </button>
+                    <div class="flex flex-col items-end justify-between gap-2 px-3 py-3 shrink-0">
+                        <!-- Segmented status control -->
+                        <div class="flex items-center bg-slate-100 rounded-lg p-0.5 gap-0.5">
+                            ${seg('todo',     '⚪ ממתין',  'bg-white text-slate-700 shadow-sm')}
+                            ${seg('progress', '🟡 בתהליך', 'bg-amber-100 text-amber-800 shadow-sm')}
+                            ${seg('done',     '✅ בוצע',   'bg-emerald-100 text-emerald-800 shadow-sm')}
+                        </div>
+                        <!-- Edit / Delete -->
+                        <div class="flex items-center gap-1">
+                            <button onclick="startEditTask('${task.id}')" class="p-1.5 text-slate-300 hover:text-indigo-600 transition rounded-md hover:bg-indigo-50" title="עריכת משימה">✏️</button>
+                            <button onclick="deleteTask('${task.id}')" class="p-1.5 text-slate-300 hover:text-red-500 transition rounded-md hover:bg-red-50" title="מחיקת משימה">🗑️</button>
                         </div>
                     </div>
                 </div>
@@ -974,36 +1019,111 @@ function switchTab(tabId) {
     const mobTabs = ['tasks', 'rsvp', 'shopping', 'budget'];
     mobTabs.forEach(id => {
         const btn = document.getElementById('mob-tab-' + id);
-        if (btn) {
-            btn.className = id === tabId
-                ? 'mob-tab-btn flex flex-col items-center gap-0.5 py-2 px-3 rounded-xl text-indigo-600 font-bold flex-1'
-                : 'mob-tab-btn flex flex-col items-center gap-0.5 py-2 px-3 rounded-xl text-slate-400 flex-1';
+        if (!btn) return;
+        const isActive = id === tabId;
+        const dot = btn.querySelector('.mob-tab-dot');
+        if (isActive) {
+            btn.className = 'mob-tab-btn flex flex-col items-center gap-0.5 py-2 px-3 rounded-xl text-indigo-600 font-bold flex-1 relative';
+            if (dot) dot.style.opacity = '1';
+        } else {
+            btn.className = 'mob-tab-btn flex flex-col items-center gap-0.5 py-2 px-3 rounded-xl text-slate-400 flex-1 relative';
+            if (dot) dot.style.opacity = '0';
         }
     });
-    // כפתור "עוד" נשאר פעיל אם הטאב הנבחר לא בניווט הראשי
+    // כפתור "עוד" — פעיל אם הטאב הנבחר לא בניווט הראשי
     const moreBtn = document.getElementById('mob-tab-more');
     if (moreBtn) {
         const isMainTab = mobTabs.includes(tabId);
-        moreBtn.className = !isMainTab
-            ? 'mob-tab-btn flex flex-col items-center gap-0.5 py-2 px-3 rounded-xl text-indigo-600 font-bold flex-1'
-            : 'mob-tab-btn flex flex-col items-center gap-0.5 py-2 px-3 rounded-xl text-slate-400 flex-1';
+        const dot = moreBtn.querySelector('.mob-tab-dot');
+        if (!isMainTab) {
+            moreBtn.className = 'mob-tab-btn flex flex-col items-center gap-0.5 py-2 px-3 rounded-xl text-indigo-600 font-bold flex-1 relative';
+            if (dot) dot.style.opacity = '1';
+        } else {
+            moreBtn.className = 'mob-tab-btn flex flex-col items-center gap-0.5 py-2 px-3 rounded-xl text-slate-400 flex-1 relative';
+            if (dot) dot.style.opacity = '0';
+        }
     }
 }
+
+let _toastTimer = null;
 
 function closeToast() {
     const toast = document.getElementById('toast');
-    if (toast) toast.classList.add('hidden');
+    if (!toast) return;
+    toast.style.transition = 'opacity 0.2s ease, transform 0.2s ease';
+    toast.style.opacity = '0';
+    toast.style.transform = 'translateY(12px)';
+    setTimeout(() => {
+        toast.classList.add('hidden');
+        toast.style.opacity = '';
+        toast.style.transform = '';
+    }, 200);
+    if (_toastTimer) { clearTimeout(_toastTimer); _toastTimer = null; }
 }
 
-function showToast(message) {
+// type: 'success' | 'warning' | 'error' | 'info' (default: auto-detect from message)
+function showToast(message, type) {
     const toast = document.getElementById('toast');
-    if (toast) {
-        const msg = document.getElementById('toastMessage');
-        if (msg) msg.innerText = message;
-        toast.classList.remove('hidden');
-        const duration = message.length > 50 ? 7000 : 4000;
-        setTimeout(closeToast, duration);
+    if (!toast) return;
+
+    // Auto-detect type from message content if not provided
+    if (!type) {
+        if (message.includes('❌') || message.includes('שגיאה') || message.includes('⚠️')) type = 'warning';
+        else if (message.includes('נמחק') || message.includes('הוסר')) type = 'error';
+        else type = 'success';
     }
+
+    const icons = { success: '✅', warning: '⚠️', error: '🗑️', info: 'ℹ️' };
+    const colors = {
+        success: 'bg-slate-900 border-white/10',
+        warning: 'bg-amber-900 border-amber-500/30',
+        error:   'bg-rose-900 border-rose-500/30',
+        info:    'bg-indigo-900 border-indigo-400/30'
+    };
+
+    const inner = toast.querySelector('div');
+    if (inner) inner.className = `${colors[type] || colors.success} text-white rounded-2xl shadow-2xl px-4 py-3 flex items-center gap-3 border`;
+
+    const iconEl = document.getElementById('toastIcon');
+    const msgEl  = document.getElementById('toastMessage');
+    if (iconEl) iconEl.textContent = icons[type] || '✅';
+    if (msgEl)  msgEl.innerHTML = message;
+
+    // Slide in
+    toast.classList.remove('hidden');
+    toast.style.opacity = '0';
+    toast.style.transform = 'translateY(12px)';
+    requestAnimationFrame(() => {
+        toast.style.transition = 'opacity 0.25s ease, transform 0.25s ease';
+        toast.style.opacity = '1';
+        toast.style.transform = 'translateY(0)';
+    });
+
+    if (_toastTimer) clearTimeout(_toastTimer);
+    const duration = message.length > 50 ? 7000 : 4000;
+    _toastTimer = setTimeout(closeToast, duration);
+}
+
+function showUndoToast(message, undoFn) {
+    const toast = document.getElementById('toast');
+    if (!toast) return;
+    const inner = toast.querySelector('div');
+    if (inner) inner.className = 'bg-slate-900 border-white/10 text-white rounded-2xl shadow-2xl px-4 py-3 flex items-center gap-3 border';
+    const iconEl = document.getElementById('toastIcon');
+    const msgEl  = document.getElementById('toastMessage');
+    if (iconEl) iconEl.textContent = '🗑️';
+    if (msgEl)  msgEl.innerHTML = `${message} <button onclick="(${undoFn.toString()})(); closeToast();" class="underline font-bold text-amber-300 mr-2 hover:text-amber-100">↩ בטל</button>`;
+
+    toast.classList.remove('hidden');
+    toast.style.opacity = '0';
+    toast.style.transform = 'translateY(12px)';
+    requestAnimationFrame(() => {
+        toast.style.transition = 'opacity 0.25s ease, transform 0.25s ease';
+        toast.style.opacity = '1';
+        toast.style.transform = 'translateY(0)';
+    });
+    if (_toastTimer) clearTimeout(_toastTimer);
+    _toastTimer = setTimeout(closeToast, 6000);
 }
 
 function updateCountdown() {
@@ -1012,19 +1132,48 @@ function updateCountdown() {
     const now = new Date();
     const diff = targetDate - now;
 
+    const widget = document.getElementById('countdownWidget');
+    const cellsEl = document.getElementById('countdownCells');
+    const labelEl = document.getElementById('cd-label');
+
     if (diff <= 0) {
-        safeSetText('countdown', "זה קורה עכשיו! 🌟");
+        // האירוע כבר קרה — מצב חגיגה
+        if (cellsEl) cellsEl.innerHTML = `<span class="text-3xl font-extrabold text-amber-300 animate-pulse">🎉 מזל טוב! 🎉</span>`;
+        if (labelEl) labelEl.textContent = "שבת בר מצווה אמיתי — הרגע קורה!";
+        if (widget) widget.classList.add('border-amber-400/60');
         return;
     }
 
-    const days = Math.floor(diff / (1000 * 60 * 60 * 24));
-    const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+    const days    = Math.floor(diff / (1000 * 60 * 60 * 24));
+    const hours   = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
     const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
 
-    if (days === 0) {
-        safeSetText('countdown', `${hours} שעות ו-${minutes} דקות ⚡`);
-    } else {
-        safeSetText('countdown', `${days} ימים ו-${hours} שעות`);
+    // עדכון ספרות
+    const pad = n => String(n).padStart(2, '0');
+    const setCell = (id, val) => { const el = document.getElementById(id); if (el) el.textContent = pad(val); };
+    setCell('cd-days',    days);
+    setCell('cd-hours',   hours);
+    setCell('cd-minutes', minutes);
+
+    // עדכון תווית + עיצוב לפי דחיפות
+    if (widget) {
+        widget.classList.remove('border-white/10', 'border-amber-400/60', 'border-red-400/80', 'ring-2', 'ring-red-400/40');
+        if (days === 0) {
+            // יום האחרון — אדום עם ring
+            widget.classList.add('border-red-400/80', 'ring-2', 'ring-red-400/40');
+            if (labelEl) labelEl.innerHTML = `<span class="text-red-300 font-bold animate-pulse">🔥 היום זה קורה!</span>`;
+        } else if (days <= 3) {
+            // 3 ימים אחרונים — כתום עז
+            widget.classList.add('border-amber-400/60');
+            if (labelEl) labelEl.innerHTML = `<span class="text-amber-300 font-semibold">⚡ ${days === 1 ? 'מחר זה יום גדול!' : `עוד ${days} ימים — כמעט שם!`}</span>`;
+        } else if (days <= 7) {
+            // שבוע אחרון — כתום עדין
+            widget.classList.add('border-amber-400/60');
+            if (labelEl) labelEl.textContent = `עוד שבוע — בואו נסגור את הפינות 💪`;
+        } else {
+            widget.classList.add('border-white/10');
+            if (labelEl) labelEl.textContent = '';
+        }
     }
 }
 
@@ -1161,10 +1310,28 @@ async function drop(ev) {
 function toggleMoreMenu() {
     const menu = document.getElementById('moreMenu');
     const backdrop = document.getElementById('moreMenuBackdrop');
+    const icon = document.getElementById('moreMenuIcon');
     if (!menu || !backdrop) return;
+
     const isHidden = menu.classList.contains('hidden');
-    menu.classList.toggle('hidden', !isHidden);
-    backdrop.classList.toggle('hidden', !isHidden);
+
+    if (isHidden) {
+        // פתיחה — slide up
+        menu.classList.remove('hidden');
+        backdrop.classList.remove('hidden');
+        if (icon) icon.textContent = '✕';
+        requestAnimationFrame(() => {
+            menu.style.transform = 'translateY(0)';
+            menu.style.opacity = '1';
+        });
+    } else {
+        // סגירה — slide down
+        if (icon) icon.textContent = '⊞';
+        menu.style.transform = 'translateY(100%)';
+        menu.style.opacity = '0';
+        backdrop.classList.add('hidden');
+        setTimeout(() => menu.classList.add('hidden'), 250);
+    }
 }
 
 function hideLoadingOverlay() {
@@ -1210,15 +1377,6 @@ function updateMaxBudget(value) {
 
 // Undo delete support
 let undoStack = [];
-
-function showUndoToast(message, undoFn) {
-    const toast = document.getElementById('toast');
-    if (!toast) return;
-    const msg = document.getElementById('toastMessage');
-    if (msg) msg.innerHTML = `${message} <button onclick="(${undoFn.toString()})(); closeToast();" class="underline font-bold mr-2">↩ בטל</button>`;
-    toast.classList.remove('hidden');
-    setTimeout(closeToast, 6000);
-}
 
 // ─── ניטור חיבור לאינטרנט ───────────────────────────────
 window.addEventListener('online', () => {

@@ -33,9 +33,27 @@
                 </div>
                 
                 <!-- Countdown -->
-                <div class="bg-white/10 backdrop-blur-md px-4 py-2 rounded-xl text-center border border-white/10 min-w-[180px]">
-                    <div class="text-xs text-indigo-200">הספירה לאחור לשבת</div>
-                    <div id="countdown" class="text-lg font-bold text-amber-300">טוען זמן...</div>
+                <div id="countdownWidget" class="bg-white/10 backdrop-blur-md rounded-2xl text-center border border-white/10 px-4 py-3 transition-all duration-500">
+                    <div class="text-[11px] text-indigo-200 font-semibold mb-2 tracking-wider uppercase">⏳ ספירה לאחור לשבת</div>
+                    <div id="countdownCells" class="flex items-center justify-center gap-2">
+                        <div class="flex flex-col items-center">
+                            <span id="cd-days" class="text-3xl font-extrabold text-amber-300 leading-none tabular-nums">--</span>
+                            <span class="text-[10px] text-indigo-300 font-semibold mt-0.5">ימים</span>
+                        </div>
+                        <span class="text-amber-400/60 text-2xl font-light pb-3">:</span>
+                        <div class="flex flex-col items-center">
+                            <span id="cd-hours" class="text-3xl font-extrabold text-amber-300 leading-none tabular-nums">--</span>
+                            <span class="text-[10px] text-indigo-300 font-semibold mt-0.5">שעות</span>
+                        </div>
+                        <span class="text-amber-400/60 text-2xl font-light pb-3">:</span>
+                        <div class="flex flex-col items-center">
+                            <span id="cd-minutes" class="text-3xl font-extrabold text-amber-300 leading-none tabular-nums">--</span>
+                            <span class="text-[10px] text-indigo-300 font-semibold mt-0.5">דקות</span>
+                        </div>
+                    </div>
+                    <div id="cd-label" class="text-[11px] text-indigo-300 mt-2 font-medium"></div>
+                    <!-- Hidden fallback for legacy references -->
+                    <div id="countdown" class="hidden"></div>
                 </div>
             </div>
             
@@ -56,49 +74,75 @@
     <main class="max-w-4xl mx-auto px-4 mt-6 pb-24 sm:pb-6">
         
         <!-- DASHBOARD HERO STATS -->
-        <section id="dashboardStats" class="bg-white rounded-2xl shadow-md p-6 mb-6 border border-slate-100">
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-6 items-center">
-                
-                <!-- Left: Circular Progress -->
-                <div class="flex flex-col items-center justify-center p-4 border-b md:border-b-0 md:border-l border-slate-100">
-                    <div class="relative flex items-center justify-center">
-                        <svg class="w-32 h-32">
-                            <circle class="text-slate-100" stroke-width="8" stroke="currentColor" fill="transparent" r="52" cx="64" cy="64"/>
-                            <circle class="text-indigo-600 progress-ring__circle" stroke-width="8" stroke-linecap="round" stroke="currentColor" fill="transparent" r="52" cx="64" cy="64" id="progressRing"/>
-                        </svg>
-                        <div class="absolute text-center">
-                            <span id="progressPercent" class="text-3xl font-extrabold text-slate-800">0%</span>
-                            <span class="block text-[10px] text-slate-400 uppercase tracking-wider font-semibold">התקדמות</span>
-                        </div>
-                    </div>
-                    <p class="text-xs text-slate-500 mt-2 text-center font-medium">עבודה משותפת מנצחת הכל!</p>
-                </div>
+        <section id="dashboardStats" class="bg-white rounded-2xl shadow-md p-5 mb-6 border border-slate-100 space-y-4">
 
-                <!-- Center & Right: Stats Counters -->
-                <div class="md:col-span-2 grid grid-cols-2 sm:grid-cols-3 gap-4">
-                    <div class="bg-rose-50 p-4 rounded-xl border border-rose-100 text-center">
-                        <span class="block text-2xl font-bold text-rose-600" id="statUrgent">0</span>
-                        <span class="text-xs text-rose-800 font-semibold">🚨 משימות באיחור</span>
-                    </div>
-                    <div class="bg-indigo-50 p-4 rounded-xl border border-indigo-100 text-center">
-                        <span class="block text-2xl font-bold text-indigo-600" id="statTasks">0</span>
-                        <span class="text-xs text-indigo-800 font-semibold">📅 משימות שנותרו</span>
-                    </div>
-                    <div class="bg-emerald-50 p-4 rounded-xl border border-emerald-100 text-center col-span-2 sm:col-span-1">
-                        <span class="block text-2xl font-bold text-emerald-600" id="statCompleted">0</span>
-                        <span class="text-xs text-emerald-800 font-semibold">✅ משימות שבוצעו</span>
-                    </div>
-                    <div class="bg-amber-50 p-3 rounded-xl border border-amber-100 text-center">
-                        <span class="block text-lg font-bold text-amber-700" id="statShopping">0 / 0</span>
-                        <span class="text-xs text-amber-800">🛒 קניות שנקנו</span>
-                    </div>
-                    <div class="bg-blue-50 p-3 rounded-xl border border-blue-100 text-center col-span-2 sm:col-span-2">
-                        <span class="block text-lg font-bold text-blue-700" id="statCalls">0 / 0</span>
-                        <span class="text-xs text-blue-800">📞 שיחות ובירורים</span>
+            <!-- Row 1: Progress ring + urgency summary -->
+            <div class="flex items-center gap-5">
+                <!-- Circular Progress -->
+                <div class="relative flex items-center justify-center shrink-0">
+                    <svg class="w-24 h-24 -rotate-90">
+                        <circle class="text-slate-100" stroke-width="7" stroke="currentColor" fill="transparent" r="44" cx="48" cy="48"/>
+                        <circle class="text-indigo-600 transition-all duration-700" stroke-width="7" stroke-linecap="round" stroke="currentColor" fill="transparent" r="44" cx="48" cy="48" id="progressRing"/>
+                    </svg>
+                    <div class="absolute text-center">
+                        <span id="progressPercent" class="text-2xl font-extrabold text-slate-800 leading-none">0%</span>
+                        <span class="block text-[9px] text-slate-400 uppercase tracking-wide font-bold mt-0.5">בוצע</span>
                     </div>
                 </div>
 
+                <!-- Right of ring: title + quick stats -->
+                <div class="flex-1 min-w-0">
+                    <p class="text-sm font-extrabold text-slate-800">התקדמות כללית</p>
+                    <p class="text-xs text-slate-400 mt-0.5 mb-3">עבודה משותפת מנצחת הכל 💪</p>
+                    <div class="flex flex-wrap gap-2">
+                        <span class="inline-flex items-center gap-1 bg-rose-50 text-rose-700 border border-rose-100 text-xs font-bold px-2.5 py-1 rounded-full">
+                            🚨 <span id="statUrgent">0</span> באיחור
+                        </span>
+                        <span class="inline-flex items-center gap-1 bg-indigo-50 text-indigo-700 border border-indigo-100 text-xs font-bold px-2.5 py-1 rounded-full">
+                            📅 <span id="statTasks">0</span> נותרו
+                        </span>
+                        <span class="inline-flex items-center gap-1 bg-emerald-50 text-emerald-700 border border-emerald-100 text-xs font-bold px-2.5 py-1 rounded-full">
+                            ✅ <span id="statCompleted">0</span> בוצעו
+                        </span>
+                    </div>
+                </div>
             </div>
+
+            <!-- Divider -->
+            <div class="border-t border-slate-100"></div>
+
+            <!-- Row 2: Secondary stats — equal grid -->
+            <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                <div class="flex items-center gap-3 bg-amber-50 border border-amber-100 rounded-xl px-3 py-3">
+                    <span class="text-2xl">🛒</span>
+                    <div>
+                        <span class="block text-base font-extrabold text-amber-800 leading-none" id="statShopping">0/0</span>
+                        <span class="text-[11px] text-amber-700 font-semibold">קניות</span>
+                    </div>
+                </div>
+                <div class="flex items-center gap-3 bg-blue-50 border border-blue-100 rounded-xl px-3 py-3">
+                    <span class="text-2xl">📞</span>
+                    <div>
+                        <span class="block text-base font-extrabold text-blue-800 leading-none" id="statCalls">0/0</span>
+                        <span class="text-[11px] text-blue-700 font-semibold">בירורים</span>
+                    </div>
+                </div>
+                <div id="statDaysCard" class="flex items-center gap-3 bg-indigo-50 border border-indigo-100 rounded-xl px-3 py-3">
+                    <span class="text-2xl">🗓️</span>
+                    <div>
+                        <span class="block text-base font-extrabold text-indigo-800 leading-none" id="statDaysLeft">—</span>
+                        <span class="text-[11px] text-indigo-700 font-semibold">ימים לאירוע</span>
+                    </div>
+                </div>
+                <div class="flex items-center gap-3 bg-purple-50 border border-purple-100 rounded-xl px-3 py-3 col-span-1">
+                    <span class="text-2xl">👥</span>
+                    <div>
+                        <span class="block text-base font-extrabold text-purple-800 leading-none" id="statGuests">0</span>
+                        <span class="text-[11px] text-purple-700 font-semibold">אורחים</span>
+                    </div>
+                </div>
+            </div>
+
         </section>
 
         <!-- NAVIGATION TABS — Desktop only -->
@@ -840,63 +884,80 @@ const firebaseConfig = {
 
 
     <!-- MOBILE BOTTOM NAV -->
-    <nav class="sm:hidden fixed bottom-0 right-0 left-0 bg-white border-t border-slate-200 shadow-xl z-40 flex justify-around items-center px-1 py-1" style="padding-bottom: env(safe-area-inset-bottom);">
-        <button onclick="switchTab('tasks')" id="mob-tab-tasks" class="mob-tab-btn flex flex-col items-center gap-0.5 py-2 px-3 rounded-xl text-indigo-600 font-bold flex-1">
+    <nav class="sm:hidden fixed bottom-0 right-0 left-0 bg-white/95 backdrop-blur-md border-t border-slate-200/80 shadow-xl z-40 flex justify-around items-center px-2 pt-1 pb-safe" style="padding-bottom: max(env(safe-area-inset-bottom), 8px);">
+        <button onclick="switchTab('tasks')" id="mob-tab-tasks" class="mob-tab-btn flex flex-col items-center gap-0.5 py-2 px-3 rounded-xl text-indigo-600 font-bold flex-1 relative">
             <span class="text-xl">📅</span>
-            <span class="text-[10px] font-semibold">משימות</span>
+            <span class="text-[10px] font-bold">משימות</span>
+            <span class="mob-tab-dot absolute bottom-1 w-1 h-1 rounded-full bg-indigo-500 opacity-100 transition-opacity"></span>
         </button>
-        <button onclick="switchTab('rsvp')" id="mob-tab-rsvp" class="mob-tab-btn flex flex-col items-center gap-0.5 py-2 px-3 rounded-xl text-slate-400 flex-1">
+        <button onclick="switchTab('rsvp')" id="mob-tab-rsvp" class="mob-tab-btn flex flex-col items-center gap-0.5 py-2 px-3 rounded-xl text-slate-400 flex-1 relative">
             <span class="text-xl">👥</span>
             <span class="text-[10px] font-semibold">אורחים</span>
+            <span class="mob-tab-dot absolute bottom-1 w-1 h-1 rounded-full bg-indigo-500 opacity-0 transition-opacity"></span>
         </button>
-        <button onclick="switchTab('shopping')" id="mob-tab-shopping" class="mob-tab-btn flex flex-col items-center gap-0.5 py-2 px-3 rounded-xl text-slate-400 flex-1">
+        <button onclick="switchTab('shopping')" id="mob-tab-shopping" class="mob-tab-btn flex flex-col items-center gap-0.5 py-2 px-3 rounded-xl text-slate-400 flex-1 relative">
             <span class="text-xl">🛒</span>
             <span class="text-[10px] font-semibold">קניות</span>
+            <span class="mob-tab-dot absolute bottom-1 w-1 h-1 rounded-full bg-indigo-500 opacity-0 transition-opacity"></span>
         </button>
-        <button onclick="switchTab('budget')" id="mob-tab-budget" class="mob-tab-btn flex flex-col items-center gap-0.5 py-2 px-3 rounded-xl text-slate-400 flex-1">
+        <button onclick="switchTab('budget')" id="mob-tab-budget" class="mob-tab-btn flex flex-col items-center gap-0.5 py-2 px-3 rounded-xl text-slate-400 flex-1 relative">
             <span class="text-xl">💰</span>
             <span class="text-[10px] font-semibold">תקציב</span>
+            <span class="mob-tab-dot absolute bottom-1 w-1 h-1 rounded-full bg-indigo-500 opacity-0 transition-opacity"></span>
         </button>
-        <button onclick="toggleMoreMenu()" id="mob-tab-more" class="mob-tab-btn flex flex-col items-center gap-0.5 py-2 px-3 rounded-xl text-slate-400 flex-1">
-            <span class="text-xl">☰</span>
+        <button onclick="toggleMoreMenu()" id="mob-tab-more" class="mob-tab-btn flex flex-col items-center gap-0.5 py-2 px-3 rounded-xl text-slate-400 flex-1 relative">
+            <span class="text-xl" id="moreMenuIcon">⊞</span>
             <span class="text-[10px] font-semibold">עוד</span>
+            <span class="mob-tab-dot absolute bottom-1 w-1 h-1 rounded-full bg-indigo-500 opacity-0 transition-opacity"></span>
         </button>
     </nav>
 
     <!-- MOBILE MORE MENU -->
-    <div id="moreMenu" class="sm:hidden hidden fixed bottom-16 right-0 left-0 bg-white border-t border-slate-200 shadow-2xl z-40 rounded-t-2xl p-4 grid grid-cols-3 gap-3" style="padding-bottom: env(safe-area-inset-bottom);">
-        <button onclick="switchTab('calls'); toggleMoreMenu()" class="flex flex-col items-center gap-1 py-3 px-2 rounded-xl bg-slate-50 border border-slate-100 text-slate-600 font-semibold">
+    <div id="moreMenu" class="sm:hidden hidden fixed bottom-16 right-0 left-0 bg-white border-t border-slate-200 shadow-2xl z-40 rounded-t-3xl px-4 pt-5 pb-4 grid grid-cols-3 gap-3"
+         style="padding-bottom: max(env(safe-area-inset-bottom), 16px); transition: transform 0.25s ease, opacity 0.25s ease; transform: translateY(100%); opacity: 0;">
+        <!-- Handle bar -->
+        <div class="col-span-3 flex justify-center -mt-2 mb-1">
+            <div class="w-10 h-1 bg-slate-200 rounded-full"></div>
+        </div>
+        <button onclick="switchTab('calls'); toggleMoreMenu()" class="flex flex-col items-center gap-1.5 py-3 px-2 rounded-2xl bg-slate-50 border border-slate-100 text-slate-700 font-semibold hover:bg-indigo-50 hover:border-indigo-100 transition">
             <span class="text-2xl">📞</span>
-            <span class="text-xs">בירורים</span>
+            <span class="text-xs font-bold">בירורים</span>
         </button>
-        <button onclick="switchTab('rooms'); toggleMoreMenu()" class="flex flex-col items-center gap-1 py-3 px-2 rounded-xl bg-slate-50 border border-slate-100 text-slate-600 font-semibold">
+        <button onclick="switchTab('rooms'); toggleMoreMenu()" class="flex flex-col items-center gap-1.5 py-3 px-2 rounded-2xl bg-slate-50 border border-slate-100 text-slate-700 font-semibold hover:bg-indigo-50 hover:border-indigo-100 transition">
             <span class="text-2xl">🏨</span>
-            <span class="text-xs">חדרים</span>
+            <span class="text-xs font-bold">חדרים</span>
         </button>
-        <button onclick="switchTab('logistics'); toggleMoreMenu()" class="flex flex-col items-center gap-1 py-3 px-2 rounded-xl bg-slate-50 border border-slate-100 text-slate-600 font-semibold">
+        <button onclick="switchTab('logistics'); toggleMoreMenu()" class="flex flex-col items-center gap-1.5 py-3 px-2 rounded-2xl bg-slate-50 border border-slate-100 text-slate-700 font-semibold hover:bg-indigo-50 hover:border-indigo-100 transition">
             <span class="text-2xl">📦</span>
-            <span class="text-xs">ציוד</span>
+            <span class="text-xs font-bold">ציוד</span>
         </button>
-        <button onclick="switchTab('menu'); toggleMoreMenu()" class="flex flex-col items-center gap-1 py-3 px-2 rounded-xl bg-slate-50 border border-slate-100 text-slate-600 font-semibold">
+        <button onclick="switchTab('menu'); toggleMoreMenu()" class="flex flex-col items-center gap-1.5 py-3 px-2 rounded-2xl bg-slate-50 border border-slate-100 text-slate-700 font-semibold hover:bg-indigo-50 hover:border-indigo-100 transition">
             <span class="text-2xl">🍽️</span>
-            <span class="text-xs">תפריט</span>
+            <span class="text-xs font-bold">תפריט</span>
         </button>
-        <button onclick="switchTab('schedule'); toggleMoreMenu()" class="flex flex-col items-center gap-1 py-3 px-2 rounded-xl bg-slate-50 border border-slate-100 text-slate-600 font-semibold">
+        <button onclick="switchTab('schedule'); toggleMoreMenu()" class="flex flex-col items-center gap-1.5 py-3 px-2 rounded-2xl bg-slate-50 border border-slate-100 text-slate-700 font-semibold hover:bg-indigo-50 hover:border-indigo-100 transition">
             <span class="text-2xl">🕒</span>
-            <span class="text-xs">לו"ז</span>
+            <span class="text-xs font-bold">לו"ז</span>
         </button>
-        <button onclick="switchTab('recent'); toggleMoreMenu()" class="flex flex-col items-center gap-1 py-3 px-2 rounded-xl bg-slate-50 border border-slate-100 text-slate-600 font-semibold">
+        <button onclick="switchTab('recent'); toggleMoreMenu()" class="flex flex-col items-center gap-1.5 py-3 px-2 rounded-2xl bg-slate-50 border border-slate-100 text-slate-700 font-semibold hover:bg-indigo-50 hover:border-indigo-100 transition">
             <span class="text-2xl">⏱️</span>
-            <span class="text-xs">חדשות</span>
+            <span class="text-xs font-bold">פעילות</span>
         </button>
-        <button onclick="switchTab('settings'); toggleMoreMenu()" class="flex flex-col items-center gap-1 py-3 px-2 rounded-xl bg-slate-50 border border-slate-100 text-slate-600 font-semibold col-span-3">
+        <button onclick="switchTab('settings'); toggleMoreMenu()" class="flex flex-col items-center gap-1.5 py-3 px-2 rounded-2xl bg-indigo-50 border border-indigo-100 text-indigo-700 font-semibold hover:bg-indigo-100 transition col-span-3">
             <span class="text-2xl">⚙️</span>
-            <span class="text-xs">הגדרות</span>
+            <span class="text-xs font-bold">הגדרות סנכרון</span>
         </button>
     </div>
     <!-- MORE MENU BACKDROP -->
     <div id="moreMenuBackdrop" class="sm:hidden hidden fixed inset-0 bg-black/30 z-30" onclick="toggleMoreMenu()"></div>
 
-</body>
+    <!-- TOAST NOTIFICATION -->
+    <div id="toast" class="fixed bottom-24 sm:bottom-6 right-4 left-4 sm:left-auto sm:w-96 z-50 hidden">
+        <div class="bg-slate-900 text-white rounded-2xl shadow-2xl px-4 py-3 flex items-center gap-3 border border-white/10">
+            <span id="toastIcon" class="text-lg shrink-0">✅</span>
+            <span id="toastMessage" class="flex-1 text-sm font-semibold leading-snug"></span>
+            <button onclick="closeToast()" class="text-slate-400 hover:text-white transition shrink-0 text-lg leading-none">✕</button>
+        </div>
+    </div>
 </html>
 
