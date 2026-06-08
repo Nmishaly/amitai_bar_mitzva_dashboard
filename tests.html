@@ -1,0 +1,329 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>QA Test Suite — Bar Mitzvah Dashboard</title>
+    <style>
+        body { font-family: monospace; background: #0f172a; color: #e2e8f0; padding: 2rem; }
+        h1 { color: #f8fafc; font-size: 1.4rem; margin-bottom: 1.5rem; }
+        .suite { margin-bottom: 1.5rem; }
+        .suite-title { color: #94a3b8; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 0.5rem; }
+        .test { padding: 6px 10px; margin: 3px 0; border-radius: 4px; font-size: 0.85rem; }
+        .pass { background: #052e16; color: #4ade80; }
+        .fail { background: #450a0a; color: #f87171; }
+        .label { font-weight: bold; }
+        #summary { margin-top: 2rem; padding: 1rem; border-radius: 8px; font-size: 1rem; font-weight: bold; }
+        .pass-all { background: #052e16; color: #4ade80; }
+        .fail-some { background: #450a0a; color: #f87171; }
+    </style>
+</head>
+<body>
+<h1>Dashboard QA Test Suite</h1>
+<div id="output"></div>
+<div id="summary"></div>
+
+<script>
+'use strict';
+
+// ──────────────────────────────────────────────────────
+// Minimal test framework
+// ──────────────────────────────────────────────────────
+const results = [];
+let currentSuite = '';
+
+function suite(name) { currentSuite = name; }
+
+function test(label, fn) {
+    try {
+        fn();
+        results.push({ suite: currentSuite, label, pass: true });
+    } catch (e) {
+        results.push({ suite: currentSuite, label, pass: false, err: e.message });
+    }
+}
+
+function assert(val, msg) {
+    if (!val) throw new Error(msg || `Expected truthy, got ${JSON.stringify(val)}`);
+}
+
+function assertEqual(a, b, msg) {
+    if (a !== b) throw new Error(msg || `Expected ${JSON.stringify(b)}, got ${JSON.stringify(a)}`);
+}
+
+// ──────────────────────────────────────────────────────
+// Code-under-test (inline copies of critical pure logic)
+// ──────────────────────────────────────────────────────
+
+// From ui.js — esc() XSS sanitizer
+function esc(str) {
+    return String(str ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+// From ui.js — budget math helpers
+function calcProgressPercent(totalExpenses, maxBudget) {
+    const safeMax = Math.max(1, maxBudget);
+    return Math.min(100, Math.round((totalExpenses / safeMax) * 100));
+}
+
+function calcDonutLengths(totalExpenses, totalPaid, maxBudget) {
+    const safeMax = Math.max(1, maxBudget);
+    const C = 2 * Math.PI * 52;
+    const expLen = Math.min(1, totalExpenses / safeMax) * C;
+    const paidLen = Math.min(expLen, (totalPaid / safeMax) * C);
+    return { expLen, paidLen, C };
+}
+
+// From ui.js — budget item remaining calc (defensive)
+function calcRemaining(expTotalAmount, expPaid) {
+    return (expTotalAmount || 0) - expPaid;
+}
+
+// From ui.js — meals guard for legacy guests
+function getGuestMeals(guest) {
+    return guest.meals || [];
+}
+
+// From app.js — batch shopping Set logic
+function makeBatchState() {
+    let shopSelectMode = false;
+    const selectedShopItems = new Set();
+    return {
+        toggle() { shopSelectMode = !shopSelectMode; selectedShopItems.clear(); return shopSelectMode; },
+        select(id) { if (selectedShopItems.has(id)) selectedShopItems.delete(id); else selectedShopItems.add(id); },
+        ids() { return [...selectedShopItems]; },
+        size() { return selectedShopItems.size; },
+        clear() { selectedShopItems.clear(); shopSelectMode = false; },
+        isMode() { return shopSelectMode; }
+    };
+}
+
+// From ui.js — dietary icon lookup
+const DIETARY_ICONS = { vegetarian: '🥬', vegan: '🌱', 'gluten-free': '🚫', mehadrin: '✡️', allergy: '⚠️' };
+function getDietIcon(type) { return DIETARY_ICONS[type] || ''; }
+
+// From confirm.html — name validation
+function validateRsvpName(name) {
+    return (name || '').trim().length > 0;
+}
+
+// From confirm.html — dedup check (case-insensitive)
+function findExistingGuest(guests, name) {
+    return guests.find(g => g.name && g.name.trim().toLowerCase() === name.trim().toLowerCase()) || null;
+}
+
+// ──────────────────────────────────────────────────────
+// TESTS
+// ──────────────────────────────────────────────────────
+
+// --- esc() XSS sanitizer ---
+suite('esc() — XSS sanitization');
+test('escapes <script> tag', () => {
+    assertEqual(esc('<script>alert(1)</script>'), '&lt;script&gt;alert(1)&lt;/script&gt;');
+});
+test('escapes & ampersand', () => {
+    assert(esc('fish & chips').includes('&amp;'));
+});
+test('escapes double quotes', () => {
+    assert(esc('"hello"').includes('&quot;'));
+});
+test('passes safe string unchanged', () => {
+    assertEqual(esc('משפחת לוי'), 'משפחת לוי');
+});
+test('handles null/undefined gracefully (returns empty string)', () => {
+    assertEqual(esc(null), '');
+    assertEqual(esc(undefined), '');
+});
+test('handles number input', () => {
+    assertEqual(esc(42), '42');
+});
+
+// --- Budget math ---
+suite('Budget — progress percent');
+test('calculates correctly at 50%', () => {
+    assertEqual(calcProgressPercent(16500, 33000), 50);
+});
+test('caps at 100% when over budget', () => {
+    assertEqual(calcProgressPercent(50000, 33000), 100);
+});
+test('zero expenses = 0%', () => {
+    assertEqual(calcProgressPercent(0, 33000), 0);
+});
+test('maxBudget=0 does NOT produce NaN or Infinity', () => {
+    const val = calcProgressPercent(5000, 0);
+    assert(Number.isFinite(val), `Expected finite number, got ${val}`);
+    assertEqual(val, 100);
+});
+test('negative maxBudget handled safely', () => {
+    const val = calcProgressPercent(0, -100);
+    assert(Number.isFinite(val), `Expected finite, got ${val}`);
+});
+
+// --- Budget donut ---
+suite('Budget donut — arc lengths');
+test('no NaN when maxBudget is zero', () => {
+    const { expLen, paidLen } = calcDonutLengths(10000, 5000, 0);
+    assert(Number.isFinite(expLen), 'expLen should be finite');
+    assert(Number.isFinite(paidLen), 'paidLen should be finite');
+});
+test('paidLen never exceeds expLen', () => {
+    const { expLen, paidLen } = calcDonutLengths(10000, 12000, 33000);
+    assert(paidLen <= expLen + 0.001, 'paidLen must not exceed expLen');
+});
+test('fully paid item: paidLen equals expLen', () => {
+    const { expLen, paidLen } = calcDonutLengths(10000, 10000, 33000);
+    assert(Math.abs(paidLen - expLen) < 0.001, 'Fully paid: arcs should match');
+});
+
+// --- Budget remaining ---
+suite('Budget item — remaining calculation');
+test('normal case', () => {
+    assertEqual(calcRemaining(5000, 2000), 3000);
+});
+test('legacy entry with undefined totalAmount returns -expPaid (no crash)', () => {
+    const r = calcRemaining(undefined, 2000);
+    assert(!isNaN(r), 'should not be NaN');
+    assertEqual(r, -2000);
+});
+test('fully paid item returns 0', () => {
+    assertEqual(calcRemaining(5000, 5000), 0);
+});
+
+// --- Meals guard for legacy guests ---
+suite('Guest meals — legacy data guard');
+test('guest without meals array: includes returns false (no crash)', () => {
+    const legacyGuest = { name: 'ישראל ישראלי', adults: 2, kids: 0 };
+    const meals = getGuestMeals(legacyGuest);
+    assert(!meals.includes('friday'), 'should safely return false');
+    assert(!meals.includes('saturday'), 'should safely return false');
+});
+test('guest with meals array: includes works', () => {
+    const g = { meals: ['friday', 'saturday'] };
+    const meals = getGuestMeals(g);
+    assert(meals.includes('friday'));
+    assert(!meals.includes('third'));
+});
+test('guest with null meals: treated as empty', () => {
+    const g = { meals: null };
+    assertEqual(getGuestMeals(g).length, 0);
+});
+
+// --- Dietary icons ---
+suite('Dietary icons — lookup');
+test('known types return emoji', () => {
+    assert(getDietIcon('vegetarian') === '🥬');
+    assert(getDietIcon('vegan') === '🌱');
+    assert(getDietIcon('mehadrin') === '✡️');
+    assert(getDietIcon('allergy') === '⚠️');
+    assert(getDietIcon('gluten-free') === '🚫');
+});
+test('unknown type returns empty string (no crash)', () => {
+    assertEqual(getDietIcon('keto'), '');
+    assertEqual(getDietIcon(undefined), '');
+    assertEqual(getDietIcon(null), '');
+});
+
+// --- Batch shopping state ---
+suite('Batch shopping — Set-based state');
+test('starts in non-select mode', () => {
+    const state = makeBatchState();
+    assert(!state.isMode());
+    assertEqual(state.size(), 0);
+});
+test('toggle enters select mode and clears selection', () => {
+    const state = makeBatchState();
+    state.select('item_1');
+    state.toggle();
+    assert(state.isMode());
+    assertEqual(state.size(), 0, 'selection cleared on toggle');
+});
+test('toggle twice returns to normal mode', () => {
+    const state = makeBatchState();
+    state.toggle();
+    state.toggle();
+    assert(!state.isMode());
+});
+test('selecting same item twice deselects it', () => {
+    const state = makeBatchState();
+    state.toggle();
+    state.select('item_1');
+    assertEqual(state.size(), 1);
+    state.select('item_1');
+    assertEqual(state.size(), 0);
+});
+test('multiple selections accumulate', () => {
+    const state = makeBatchState();
+    state.toggle();
+    state.select('a'); state.select('b'); state.select('c');
+    assertEqual(state.size(), 3);
+    const ids = state.ids();
+    assert(ids.includes('a') && ids.includes('b') && ids.includes('c'));
+});
+test('batchBuy with 0 selected: ids array is empty', () => {
+    const state = makeBatchState();
+    state.toggle();
+    assertEqual(state.ids().length, 0);
+});
+
+// --- RSVP self-confirm validation ---
+suite('confirm.html — RSVP validation');
+test('empty name is rejected', () => {
+    assert(!validateRsvpName(''));
+    assert(!validateRsvpName('   '));
+    assert(!validateRsvpName(null));
+});
+test('valid name passes', () => {
+    assert(validateRsvpName('משפחת כהן'));
+    assert(validateRsvpName('A'));
+});
+test('dedup: finds existing guest case-insensitively', () => {
+    const guests = [{ id: 'g1', name: 'משפחת לוי' }, { id: 'g2', name: 'Family Cohen' }];
+    const match = findExistingGuest(guests, 'משפחת לוי');
+    assert(match !== null, 'should find exact match');
+    assertEqual(match.id, 'g1');
+});
+test('dedup: case-insensitive match', () => {
+    const guests = [{ id: 'g1', name: 'family cohen' }];
+    const match = findExistingGuest(guests, 'Family Cohen');
+    assert(match !== null, 'case-insensitive match should work');
+});
+test('dedup: no match returns null', () => {
+    const guests = [{ id: 'g1', name: 'משפחת לוי' }];
+    assert(findExistingGuest(guests, 'משפחת כהן') === null);
+});
+test('dedup: guest without name field does not crash', () => {
+    const guests = [{ id: 'g1' }, { id: 'g2', name: null }];
+    assert(findExistingGuest(guests, 'כהן') === null);
+});
+
+// ──────────────────────────────────────────────────────
+// Render results
+// ──────────────────────────────────────────────────────
+const out = document.getElementById('output');
+let lastSuite = '';
+let passed = 0, failed = 0;
+
+results.forEach(r => {
+    if (r.suite !== lastSuite) {
+        lastSuite = r.suite;
+        const title = document.createElement('div');
+        title.className = 'suite';
+        const suiteTitle = document.createElement('div');
+        suiteTitle.className = 'suite-title';
+        suiteTitle.textContent = r.suite;
+        title.appendChild(suiteTitle);
+        out.appendChild(title);
+    }
+    const div = document.createElement('div');
+    div.className = `test ${r.pass ? 'pass' : 'fail'}`;
+    div.innerHTML = `<span class="label">${r.pass ? '✓' : '✗'}</span> ${r.label}${r.err ? ` — ${r.err}` : ''}`;
+    out.lastElementChild.appendChild(div);
+    if (r.pass) passed++; else failed++;
+});
+
+const summary = document.getElementById('summary');
+summary.className = failed === 0 ? 'pass-all' : 'fail-some';
+summary.textContent = `${passed + failed} tests: ${passed} passed, ${failed} failed ${failed === 0 ? '— ✅ ALL GREEN' : '— ❌ FAILURES DETECTED'}`;
+</script>
+</body>
+</html>

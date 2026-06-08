@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#0f766e">
+    <title>אישור הגעה — שבת בר מצווה אמיתי</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Assistant:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <style>body { font-family: 'Assistant', sans-serif; }</style>
+</head>
+<body class="bg-teal-50 min-h-screen flex items-center justify-center p-4">
+
+<div class="w-full max-w-md mx-auto space-y-6">
+
+    <!-- Header -->
+    <div class="text-center">
+        <div class="inline-flex items-center justify-center w-16 h-16 rounded-full bg-teal-600 text-white text-3xl mb-3 shadow-lg">🌟</div>
+        <h1 class="text-2xl font-extrabold text-teal-900">שבת בר מצווה של אמיתי</h1>
+        <p class="text-sm text-teal-700 mt-1 font-semibold">12 ביוני 2026 — אישור הגעה</p>
+    </div>
+
+    <!-- Status banner -->
+    <div id="statusBanner" class="hidden rounded-2xl p-4 text-sm font-bold text-center"></div>
+
+    <!-- Form card -->
+    <div id="formCard" class="bg-white rounded-3xl shadow-xl p-6 space-y-5 border border-teal-100">
+        <p class="text-sm text-slate-600 leading-relaxed">
+            שמחים שתצטרפו אלינו! אנא מלאו את הפרטים הבאים ולחצו על הכפתור — הפרטים יישמרו ישירות אצל המארחים.
+        </p>
+
+        <!-- Name -->
+        <div>
+            <label class="block text-xs font-bold text-slate-600 mb-1">שם ושם משפחה *</label>
+            <input type="text" id="cfName" placeholder="למשל: משפחת לוי"
+                class="w-full p-3 border border-slate-200 rounded-xl text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-teal-500">
+        </div>
+
+        <!-- Adults / Kids row -->
+        <div class="grid grid-cols-2 gap-3">
+            <div>
+                <label class="block text-xs font-bold text-slate-600 mb-1">מבוגרים (מעל 12)</label>
+                <input type="number" id="cfAdults" value="2" min="0"
+                    class="w-full p-3 border border-slate-200 rounded-xl text-sm font-semibold text-center focus:outline-none focus:ring-2 focus:ring-teal-500">
+            </div>
+            <div>
+                <label class="block text-xs font-bold text-slate-600 mb-1">ילדים (עד 12)</label>
+                <input type="number" id="cfKids" value="0" min="0"
+                    class="w-full p-3 border border-slate-200 rounded-xl text-sm font-semibold text-center focus:outline-none focus:ring-2 focus:ring-teal-500">
+            </div>
+        </div>
+
+        <!-- Sleep -->
+        <div>
+            <label class="block text-xs font-bold text-slate-600 mb-1">נשארים לישון בשבת?</label>
+            <select id="cfSleep" class="w-full p-3 border border-slate-200 rounded-xl text-sm font-semibold bg-white focus:outline-none focus:ring-2 focus:ring-teal-500">
+                <option value="no">❌ לא, חוזרים הביתה</option>
+                <option value="yes">🏡 כן, נשארים לישון</option>
+            </select>
+        </div>
+
+        <!-- Dietary -->
+        <div>
+            <label class="block text-xs font-bold text-slate-600 mb-1">🥗 העדפה תזונתית</label>
+            <select id="cfDietary" class="w-full p-3 border border-slate-200 rounded-xl text-sm font-semibold bg-white focus:outline-none focus:ring-2 focus:ring-teal-500">
+                <option value="">ללא הגבלה מיוחדת</option>
+                <option value="vegetarian">🥬 צמחוני</option>
+                <option value="vegan">🌱 טבעוני</option>
+                <option value="gluten-free">🚫 ללא גלוטן</option>
+                <option value="mehadrin">✡️ כשרות מהדרין</option>
+                <option value="allergy">⚠️ אלרגיה / רגישות</option>
+            </select>
+        </div>
+
+        <!-- Meals -->
+        <div class="bg-slate-50 rounded-2xl p-4">
+            <span class="block text-xs font-bold text-slate-600 mb-3">🍽️ באילו ארוחות תשתתפו?</span>
+            <div class="space-y-2.5">
+                <label class="flex items-center gap-3 cursor-pointer select-none">
+                    <input type="checkbox" id="cfFriday" checked class="w-5 h-5 rounded text-teal-600 border-slate-300 focus:ring-teal-500">
+                    <span class="text-sm font-semibold text-slate-700">🍷 ארוחת ערב שישי</span>
+                </label>
+                <label class="flex items-center gap-3 cursor-pointer select-none">
+                    <input type="checkbox" id="cfSaturday" checked class="w-5 h-5 rounded text-teal-600 border-slate-300 focus:ring-teal-500">
+                    <span class="text-sm font-semibold text-slate-700">⛪ בוקר שבת וקידוש</span>
+                </label>
+                <label class="flex items-center gap-3 cursor-pointer select-none">
+                    <input type="checkbox" id="cfThird" checked class="w-5 h-5 rounded text-teal-600 border-slate-300 focus:ring-teal-500">
+                    <span class="text-sm font-semibold text-slate-700">🥧 סעודה שלישית</span>
+                </label>
+            </div>
+        </div>
+
+        <!-- Notes -->
+        <div>
+            <label class="block text-xs font-bold text-slate-600 mb-1">הערות נוספות (אופציונלי)</label>
+            <textarea id="cfNotes" placeholder="למשל: נצטרך מקום חנייה, נגיע רק לשבת..."
+                rows="2"
+                class="w-full p-3 border border-slate-200 rounded-xl text-sm resize-none focus:outline-none focus:ring-2 focus:ring-teal-500"></textarea>
+        </div>
+
+        <!-- Submit -->
+        <button id="submitBtn" onclick="submitRsvp()"
+            class="w-full bg-teal-600 hover:bg-teal-700 active:bg-teal-800 text-white font-extrabold py-4 rounded-2xl text-base transition shadow-lg">
+            ✅ אשר הגעה
+        </button>
+    </div>
+
+    <!-- Footer -->
+    <p class="text-center text-xs text-slate-400">הנתונים נשמרים ישירות אצל המארחים — נצר ונעמה מישלי</p>
+</div>
+
+<!-- Toast -->
+<div id="toast" class="fixed bottom-6 right-4 left-4 sm:left-auto sm:w-80 z-50 hidden">
+    <div class="bg-slate-900 text-white rounded-2xl shadow-2xl px-4 py-3 text-sm font-semibold text-center"></div>
+</div>
+
+<script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
+<script>
+const FIREBASE_CONFIG = {
+    apiKey: "AIzaSyAe4nHXoNXaLIDi8-3L0axDUrpiAVqoHG8",
+    authDomain: "amitai-bar-mitzvah.firebaseapp.com",
+    projectId: "amitai-bar-mitzvah",
+    storageBucket: "amitai-bar-mitzvah.firebasestorage.app",
+    messagingSenderId: "384741194010",
+    appId: "1:384741194010:web:9b014829a95fcdab82d4a3"
+};
+const APP_ID = 'bar-mitzvah-amitai';
+
+let db = null;
+
+function showStatus(msg, type) {
+    const el = document.getElementById('statusBanner');
+    if (!el) return;
+    el.textContent = msg;
+    el.className = `rounded-2xl p-4 text-sm font-bold text-center ${
+        type === 'success' ? 'bg-emerald-100 text-emerald-800 border border-emerald-200' :
+        type === 'error'   ? 'bg-rose-100 text-rose-800 border border-rose-200' :
+                             'bg-amber-100 text-amber-800 border border-amber-200'
+    }`;
+    el.classList.remove('hidden');
+}
+
+function getCollectionRef(col) {
+    return db.collection('artifacts').doc(APP_ID).collection('public').doc('data').collection(col);
+}
+
+async function submitRsvp() {
+    const name = (document.getElementById('cfName').value || '').trim();
+    if (!name) { showStatus('אנא הזינו שם!', 'error'); return; }
+
+    const adults   = parseInt(document.getElementById('cfAdults').value)  || 0;
+    const kids     = parseInt(document.getElementById('cfKids').value)     || 0;
+    const sleep    = document.getElementById('cfSleep').value;
+    const dietary  = document.getElementById('cfDietary').value;
+    const notes    = (document.getElementById('cfNotes').value || '').trim();
+
+    const meals = [];
+    if (document.getElementById('cfFriday').checked)   meals.push('friday');
+    if (document.getElementById('cfSaturday').checked) meals.push('saturday');
+    if (document.getElementById('cfThird').checked)    meals.push('third');
+
+    const btn = document.getElementById('submitBtn');
+    if (btn) { btn.disabled = true; btn.textContent = 'שולח...'; }
+    showStatus('שולח את הפרטים...', 'info');
+
+    const guest = {
+        id: 'g_self_' + Date.now(),
+        name, adults, kids, sleep, dietary, meals, notes,
+        confirmedVia: 'self-confirm',
+        confirmedAt: Date.now()
+    };
+
+    try {
+        if (!db) {
+            // Try to connect to Firebase
+            if (firebase.apps.length === 0) firebase.initializeApp(FIREBASE_CONFIG);
+            const auth = firebase.auth();
+            await auth.signInAnonymously();
+            db = firebase.firestore();
+        }
+
+        // Check for duplicate name (case-insensitive) and update if found
+        const snapshot = await getCollectionRef('rsvps').get();
+        let existingDoc = null;
+        snapshot.forEach(doc => {
+            const d = doc.data();
+            if (d.name && d.name.trim().toLowerCase() === name.toLowerCase()) {
+                existingDoc = doc;
+            }
+        });
+
+        if (existingDoc) {
+            guest.id = existingDoc.id;
+            await getCollectionRef('rsvps').doc(existingDoc.id).set(guest, { merge: true });
+        } else {
+            await getCollectionRef('rsvps').doc(guest.id).set(guest);
+        }
+
+        showStatus(`תודה ${name}! 🎉 הפרטים שלכם נשמרו בהצלחה. נשמח לראותכם!`, 'success');
+        const formCard = document.getElementById('formCard');
+        if (formCard) formCard.classList.add('hidden');
+
+    } catch (err) {
+        console.error(err);
+        showStatus('שגיאה בשמירת הפרטים. אנא נסו שנית או פנו ישירות לנצר ונעמה.', 'error');
+        if (btn) { btn.disabled = false; btn.textContent = '✅ אשר הגעה'; }
+    }
+}
+
+// Auto-connect on load
+window.addEventListener('load', async () => {
+    try {
+        if (firebase.apps.length === 0) firebase.initializeApp(FIREBASE_CONFIG);
+        await firebase.auth().signInAnonymously();
+        db = firebase.firestore();
+    } catch(e) {
+        console.warn('Firebase pre-connect failed, will retry on submit:', e);
+    }
+});
+</script>
+</body>
+</html>

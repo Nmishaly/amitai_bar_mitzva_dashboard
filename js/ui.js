@@ -1,3 +1,7 @@
+function esc(str) {
+    return String(str ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
 function formatDateDisplay(dateStr) {
     if (!dateStr) return "";
     try {
@@ -30,6 +34,25 @@ function safeSetText(id, text) {
     if (el) {
         el.innerText = text;
     }
+}
+
+function attachSwipe(el, onSwipeRight) {
+    if (!el) return;
+    let startX = 0;
+    el.addEventListener('touchstart', e => {
+        startX = e.touches[0].clientX;
+        el.style.transition = 'none';
+    }, { passive: true });
+    el.addEventListener('touchmove', e => {
+        const dx = e.touches[0].clientX - startX;
+        if (dx > 0) el.style.transform = `translateX(${Math.min(dx * 0.4, 28)}px)`;
+    }, { passive: true });
+    el.addEventListener('touchend', e => {
+        const dx = e.changedTouches[0].clientX - startX;
+        el.style.transition = 'transform 0.2s ease';
+        el.style.transform = '';
+        if (dx > 60) onSwipeRight();
+    });
 }
 
 function formatTimeAgo(timestamp) {
@@ -101,6 +124,13 @@ function calculateStats() {
     // Total guests from rsvps
     const totalGuests = rsvps.reduce((sum, g) => sum + g.adults + g.kids, 0);
     safeSetText('statGuests', totalGuests);
+
+    // Event Day detection — show banner on June 12 and after
+    const eventDayStart = new Date('2026-06-12T00:00:00');
+    if (Date.now() >= eventDayStart.getTime()) {
+        const banner = document.getElementById('eventDayBanner');
+        if (banner) banner.classList.remove('hidden');
+    }
 }
 
 function renderTasks() {
@@ -201,11 +231,11 @@ function renderTasks() {
             itemHtml = `
                 <div class="flex border-r-4 ${style.border} ${style.bg} hover:brightness-95 transition-all duration-150">
                     <div class="flex-1 px-4 py-3 min-w-0">
-                        <h4 class="font-bold text-sm leading-snug ${task.status === 'done' ? 'line-through text-slate-400' : 'text-slate-800'}">${task.title}</h4>
+                        <h4 class="font-bold text-sm leading-snug ${task.status === 'done' ? 'line-through text-slate-400' : 'text-slate-800'}">${esc(task.title)}</h4>
                         <div class="flex flex-wrap items-center gap-1.5 mt-1.5">
-                            <span class="inline-flex items-center gap-1 bg-indigo-50 text-indigo-700 text-[11px] px-2 py-0.5 rounded-full font-semibold">👤 ${task.responsible || 'לא הוגדר'}</span>
-                            <span class="inline-flex items-center gap-1 bg-rose-50 text-rose-700 text-[11px] px-2 py-0.5 rounded-full font-semibold">📅 ${formattedDate}</span>
-                            ${task.notes ? `<span class="text-[11px] text-slate-400 truncate max-w-[200px]">📌 ${task.notes}</span>` : ''}
+                            <span class="inline-flex items-center gap-1 bg-indigo-50 text-indigo-700 text-[11px] px-2 py-0.5 rounded-full font-semibold">👤 ${esc(task.responsible || 'לא הוגדר')}</span>
+                            <span class="inline-flex items-center gap-1 bg-rose-50 text-rose-700 text-[11px] px-2 py-0.5 rounded-full font-semibold">📅 ${esc(formattedDate)}</span>
+                            ${task.notes ? `<span class="text-[11px] text-slate-400 truncate max-w-[200px]">📌 ${esc(task.notes)}</span>` : ''}
                         </div>
                     </div>
                     <div class="flex flex-col items-end justify-between gap-2 px-3 py-3 shrink-0">
@@ -314,7 +344,7 @@ function renderRecentTasks() {
         updates.push({
             ts: e.createdAt || 0, type: 'budget',
             title: e.name,
-            subtitle: `${e.totalAmount.toLocaleString()} ₪`,
+            subtitle: `${(e.totalAmount || 0).toLocaleString()} ₪`,
             badge: '💰 תקציב',
             action: 'נוספה',
             color: 'bg-rose-100 text-rose-800',
@@ -378,29 +408,33 @@ function renderRsvps() {
         totalKids += g.kids;
 
         // Meal participation mapping
+        const gMeals = g.meals || [];
         const mealsText = [];
-        if (g.meals.includes('friday')) {
+        if (gMeals.includes('friday')) {
             mealsText.push('🍷 ערב שבת');
             countFriday += size;
             subAdultsFriday += g.adults;
             subKidsFriday += g.kids;
         }
-        if (g.meals.includes('saturday')) {
+        if (gMeals.includes('saturday')) {
             mealsText.push('⛪ בוקר');
             countSaturday += size;
             subAdultsSaturday += g.adults;
             subKidsSaturday += g.kids;
         }
-        if (g.meals.includes('third')) {
+        if (gMeals.includes('third')) {
             mealsText.push('🥧 שלישית');
             countThird += size;
             subAdultsThird += g.adults;
             subKidsThird += g.kids;
         }
 
+        const DIETARY_ICONS = { vegetarian: '🥬', vegan: '🌱', 'gluten-free': '🚫', mehadrin: '✡️', allergy: '⚠️' };
+        const dietBadge = g.dietary ? `<span class="ms-1.5 text-[9px] font-bold bg-teal-100 text-teal-800 px-1.5 py-0.5 rounded-full whitespace-nowrap">${DIETARY_ICONS[g.dietary] || ''}</span>` : '';
+
         const rowHtml = `
             <tr class="hover:bg-slate-50 transition">
-                <td class="p-3 font-bold text-slate-800">${g.name}</td>
+                <td class="p-3 font-bold text-slate-800">${esc(g.name)}${dietBadge}</td>
                 <td class="p-3 text-center font-semibold text-slate-700">${g.adults}</td>
                 <td class="p-3 text-center font-semibold text-slate-700">${g.kids}</td>
                 <td class="p-3 text-center font-semibold">${g.sleep === 'yes' ? '🏡 כן' : '❌ לא'}</td>
@@ -417,22 +451,26 @@ function renderRsvps() {
     const cardsBody = document.getElementById('rsvpCardsBody');
     if (cardsBody) {
         cardsBody.innerHTML = "";
+        const DIETARY_ICONS_MOB = { vegetarian: '🥬 צמחוני', vegan: '🌱 טבעוני', 'gluten-free': '🚫 ללא גלוטן', mehadrin: '✡️ מהדרין', allergy: '⚠️ רגישות' };
         rsvps.forEach(g => {
             const size = g.adults + g.kids;
             const mealsText = [];
-            if (g.meals.includes('friday')) mealsText.push('🍷 ערב שבת');
-            if (g.meals.includes('saturday')) mealsText.push('⛪ בוקר');
-            if (g.meals.includes('third')) mealsText.push('🥧 שלישית');
+            const gMealsM = g.meals || [];
+            if (gMealsM.includes('friday')) mealsText.push('🍷 ערב שבת');
+            if (gMealsM.includes('saturday')) mealsText.push('⛪ בוקר');
+            if (gMealsM.includes('third')) mealsText.push('🥧 שלישית');
+            const dietLine = g.dietary ? `<div class="text-[10px] font-bold text-teal-700 mt-0.5">${DIETARY_ICONS_MOB[g.dietary] || g.dietary}</div>` : '';
             cardsBody.insertAdjacentHTML('beforeend', `
                 <div class="p-4 flex justify-between items-start gap-2">
                     <div class="flex-1">
-                        <div class="font-bold text-slate-800 text-sm">${g.name}</div>
+                        <div class="font-bold text-slate-800 text-sm">${esc(g.name)}</div>
                         <div class="text-xs text-slate-500 mt-1 flex flex-wrap gap-2">
                             <span>👨‍🦳 ${g.adults} מבוגרים</span>
                             <span>👶 ${g.kids} ילדים</span>
                             <span>${g.sleep === 'yes' ? '🏡 נשאר' : '🚗 לא נשאר'}</span>
                         </div>
                         <div class="text-xs text-indigo-600 font-semibold mt-1">${mealsText.join(' · ') || 'ללא ארוחות'}</div>
+                        ${dietLine}
                     </div>
                     <button onclick="deleteRsvp('${g.id}')" class="text-slate-300 hover:text-red-500 transition font-bold text-lg leading-none">✕</button>
                 </div>
@@ -456,6 +494,11 @@ function renderRsvps() {
     // Update inputs for drink calculation automatically
     safeSetValue('calcAdults', totalAdults);
     safeSetValue('calcKids', totalKids);
+
+    // Auto-populate per-meal guest counts into the drink calculator
+    safeSetValue('guestsFriday', countFriday);
+    safeSetValue('guestsSaturday', countSaturday);
+    safeSetValue('guestsThird', countThird);
 
     calculateDrinks();
 }
@@ -487,18 +530,35 @@ function renderShopping() {
         // Sort: unbought first, bought last
         const sortedItems = [...catItems].sort((a, b) => (a.bought ? 1 : 0) - (b.bought ? 1 : 0));
         sortedItems.forEach(item => {
-            const itemHtml = `
-                <div class="p-4 flex justify-between items-center hover:bg-slate-50 transition">
-                    <label class="flex items-center gap-3 cursor-pointer select-none flex-1">
-                        <input type="checkbox" ${item.bought ? 'checked' : ''} onchange="toggleShopItem('${item.id}')" class="w-5 h-5 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500 cursor-pointer">
-                        <span class="text-sm font-medium ${item.bought ? 'line-through text-slate-400' : 'text-slate-800'}">${item.title}</span>
-                    </label>
-                    <button onclick="deleteShopItem('${item.id}')" class="p-1.5 text-slate-300 hover:text-red-500 transition rounded-md hover:bg-red-50">
-                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
-                    </button>
-                </div>
-            `;
-            container.insertAdjacentHTML('beforeend', itemHtml);
+            const inBatchMode = typeof shopSelectMode !== 'undefined' && shopSelectMode;
+            const isSelected = inBatchMode && typeof selectedShopItems !== 'undefined' && selectedShopItems.has(item.id);
+
+            if (inBatchMode) {
+                const itemHtml = `
+                    <div class="p-4 flex items-center gap-3 cursor-pointer transition-colors ${isSelected ? 'bg-indigo-50' : 'hover:bg-slate-50'}"
+                         data-batch-id="${item.id}" onclick="toggleShopItemSelect('${item.id}')">
+                        <input type="checkbox" ${isSelected ? 'checked' : ''} class="w-5 h-5 rounded border-slate-300 text-indigo-600 pointer-events-none" readonly>
+                        <span class="text-sm font-medium ${item.bought ? 'line-through text-slate-400' : 'text-slate-800'} flex-1">${item.title}</span>
+                        ${item.bought ? '<span class="text-[10px] text-emerald-600 font-bold shrink-0">נרכש ✓</span>' : ''}
+                    </div>
+                `;
+                container.insertAdjacentHTML('beforeend', itemHtml);
+            } else {
+                const itemHtml = `
+                    <div class="p-4 flex justify-between items-center hover:bg-slate-50 transition-colors" style="transition:transform 0.2s ease,background-color 0.15s;">
+                        <label class="flex items-center gap-3 cursor-pointer select-none flex-1">
+                            <input type="checkbox" ${item.bought ? 'checked' : ''} onchange="toggleShopItem('${item.id}')" class="w-5 h-5 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500 cursor-pointer">
+                            <span class="text-sm font-medium ${item.bought ? 'line-through text-slate-400' : 'text-slate-800'}">${item.title}</span>
+                        </label>
+                        <button onclick="deleteShopItem('${item.id}')" class="p-1.5 text-slate-300 hover:text-red-500 transition rounded-md hover:bg-red-50">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+                        </button>
+                    </div>
+                `;
+                container.insertAdjacentHTML('beforeend', itemHtml);
+                // Swipe right to mark as bought (mobile only)
+                if (!item.bought) attachSwipe(container.lastElementChild, () => toggleShopItem(item.id));
+            }
         });
     });
 
@@ -510,48 +570,43 @@ function renderRooms() {
     if (!container) return;
     container.innerHTML = "";
 
-    if (rooms.length === 0) {
-        container.innerHTML = `
-            <div class="col-span-full p-8 text-center text-slate-400 text-sm bg-white rounded-2xl border border-slate-100">
-                אין כרגע חדרים רשומים בוילה. הוסיפו חדר חדש למעלה!
-            </div>
-        `;
-        // לא מחזירים כאן — ממשיכים לרנדר מיקומים חיצוניים ו-banner
-    } else {
-
-    // Summary bar
+    // Summary bar (always render, even when rooms is empty)
     const totalBeds     = rooms.reduce((sum, r) => sum + (parseInt(r.capacity) || 0), 0);
     const totalOccupied = rooms.reduce((sum, r) => sum + (r.guests ? r.guests.length : 0), 0);
     const totalFree     = totalBeds - totalOccupied;
     const summaryEl = document.getElementById('roomsSummary');
     if (summaryEl) {
-        const pct = totalBeds > 0 ? Math.round((totalOccupied / totalBeds) * 100) : 0;
-        summaryEl.innerHTML = `
-            <div class="bg-white border border-purple-100 rounded-2xl px-5 py-4 mb-4 shadow-sm">
-                <div class="flex items-center justify-between mb-2 gap-2 flex-wrap">
-                    <span class="text-sm font-extrabold text-purple-900">🏨 תפוסה כוללת בווילה</span>
-                    <div class="flex items-center gap-2">
-                        <span class="text-sm font-extrabold ${totalFree === 0 ? 'text-rose-600' : 'text-emerald-600'}">
-                            ${totalFree === 0 ? '🔴 הווילה מלאה!' : `🟢 ${totalFree} מיטות פנויות`}
-                        </span>
-                        <button onclick="copyRoomsSummaryToClipboard()" class="flex items-center gap-1 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200 text-xs font-bold px-3 py-1.5 rounded-lg transition">
-                            📋 העתק לוואטסאפ
-                        </button>
+        if (rooms.length === 0) {
+            summaryEl.innerHTML = '';
+        } else {
+            const pct = totalBeds > 0 ? Math.round((totalOccupied / totalBeds) * 100) : 0;
+            summaryEl.innerHTML = `
+                <div class="bg-white border border-purple-100 rounded-2xl px-5 py-4 mb-4 shadow-sm">
+                    <div class="flex items-center justify-between mb-2 gap-2 flex-wrap">
+                        <span class="text-sm font-extrabold text-purple-900">🏨 תפוסה כוללת בווילה</span>
+                        <div class="flex items-center gap-2">
+                            <span class="text-sm font-extrabold ${totalFree === 0 ? 'text-rose-600' : 'text-emerald-600'}">
+                                ${totalFree === 0 ? '🔴 הווילה מלאה!' : `🟢 ${totalFree} מיטות פנויות`}
+                            </span>
+                            <button onclick="copyRoomsSummaryToClipboard()" class="flex items-center gap-1 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200 text-xs font-bold px-3 py-1.5 rounded-lg transition">
+                                📋 העתק לוואטסאפ
+                            </button>
+                        </div>
+                    </div>
+                    <div class="w-full bg-slate-100 h-2.5 rounded-full overflow-hidden">
+                        <div class="h-full rounded-full transition-all duration-500 ${pct >= 100 ? 'bg-rose-500' : pct >= 75 ? 'bg-amber-500' : 'bg-purple-500'}"
+                             style="width: ${pct}%"></div>
+                    </div>
+                    <div class="flex justify-between text-[11px] text-slate-400 font-semibold mt-1">
+                        <span>${totalOccupied} תפוסות</span>
+                        <span>${totalBeds} סה"כ מיטות</span>
                     </div>
                 </div>
-                <div class="w-full bg-slate-100 h-2.5 rounded-full overflow-hidden">
-                    <div class="h-full rounded-full transition-all duration-500 ${pct >= 100 ? 'bg-rose-500' : pct >= 75 ? 'bg-amber-500' : 'bg-purple-500'}"
-                         style="width: ${pct}%"></div>
-                </div>
-                <div class="flex justify-between text-[11px] text-slate-400 font-semibold mt-1">
-                    <span>${totalOccupied} תפוסות</span>
-                    <span>${totalBeds} סה"כ מיטות</span>
-                </div>
-            </div>
-        `;
+            `;
+        }
     }
 
-    // Unassigned banner — אורחים עם sleep:yes שעדיין לא שובצו לשום חדר
+    // Unassigned banner — always computed regardless of villa rooms count
     const allAssigned = [
         ...rooms.flatMap(r => r.guests || []),
         ...(typeof externalLocations !== 'undefined' ? externalLocations.flatMap(l => l.guests || []) : [])
@@ -566,14 +621,25 @@ function renderRooms() {
     if (banner) {
         if (unassigned.length > 0) {
             banner.classList.remove('hidden');
-            if (bannerText) bannerText.textContent = `${unassigned.length} אורח${unassigned.length > 1 ? 'ים' : ''} ממתינ${unassigned.length > 1 ? 'ים' : ''} לשיבוץ: ${unassigned.map(g => g.name).join(', ')}`;
+            banner.classList.remove('bg-emerald-50', 'border-emerald-200');
+            banner.classList.add('bg-rose-50', 'border-rose-200');
+            if (bannerText) { bannerText.textContent = `${unassigned.length} אורח${unassigned.length > 1 ? 'ים' : ''} ממתינ${unassigned.length > 1 ? 'ים' : ''} לשיבוץ: ${unassigned.map(g => g.name).join(', ')}`; bannerText.className = 'text-sm font-bold text-rose-800'; }
         } else if (sleepingGuests.length > 0) {
             banner.classList.remove('hidden');
-            banner.className = banner.className.replace('bg-rose-50 border-rose-200', 'bg-emerald-50 border-emerald-200');
+            banner.classList.remove('bg-rose-50', 'border-rose-200');
+            banner.classList.add('bg-emerald-50', 'border-emerald-200');
             if (bannerText) { bannerText.textContent = '✅ כל האורחים הלנים שובצו!'; bannerText.className = 'text-sm font-bold text-emerald-800'; }
         } else {
             banner.classList.add('hidden');
         }
+    }
+
+    if (rooms.length === 0) {
+        container.innerHTML = `
+            <div class="col-span-full p-8 text-center text-slate-400 text-sm bg-white rounded-2xl border border-slate-100">
+                אין כרגע חדרים רשומים בוילה. הוסיפו חדר חדש למעלה!
+            </div>
+        `;
     }
 
     rooms.forEach(room => {
@@ -616,7 +682,7 @@ function renderRooms() {
                 <!-- Header -->
                 <div class="flex items-start justify-between gap-2">
                     <div>
-                        <h3 class="font-extrabold text-slate-800 text-sm leading-snug">${room.name}</h3>
+                        <h3 class="font-extrabold text-slate-800 text-sm leading-snug">${esc(room.name)}</h3>
                         <span class="inline-flex items-center gap-1 mt-1 text-[11px] font-bold px-2 py-0.5 rounded-full border ${badgeBg}">
                             ${isFull ? '🔴 מלא' : `🟢 ${freeCount} פנוי${freeCount !== 1 ? 'ות' : ''}`}
                             &nbsp;·&nbsp; ${occupiedCount}/${capacity} מיטות
@@ -650,8 +716,6 @@ function renderRooms() {
         container.insertAdjacentHTML('beforeend', cardHtml);
     }); // end rooms.forEach
 
-    } // end else (rooms.length > 0)
-
     // ─── מיקומים חיצוניים ───────────────────────────────────
     const extSection = document.getElementById('externalLocationsSection');
     const extContainer = document.getElementById('externalLocationsContainer');
@@ -680,7 +744,7 @@ function renderRooms() {
                     <div class="bg-white rounded-2xl shadow-sm border border-teal-200 p-4 flex flex-col gap-3 hover:shadow-md transition-shadow">
                         <div class="flex items-start justify-between gap-2">
                             <div>
-                                <h3 class="font-extrabold text-teal-900 text-sm leading-snug">${loc.name}</h3>
+                                <h3 class="font-extrabold text-teal-900 text-sm leading-snug">${esc(loc.name)}</h3>
                                 <span class="text-[11px] font-bold text-teal-600 mt-0.5">🏘️ מיקום חיצוני · ${guests.length} אורחים</span>
                             </div>
                             <button onclick="deleteExternalLocation('${loc.id}')" class="text-slate-300 hover:text-red-500 transition p-1 rounded-lg hover:bg-red-50">🗑️</button>
@@ -717,8 +781,8 @@ function renderCalls() {
                 <div>
                     <div class="flex justify-between items-start">
                         <div>
-                            <h3 class="font-extrabold text-slate-800 text-sm">${call.title}</h3>
-                            <p class="text-xs text-indigo-600 font-semibold mt-0.5">${call.subtitle}</p>
+                            <h3 class="font-extrabold text-slate-800 text-sm">${esc(call.title)}</h3>
+                            <p class="text-xs text-indigo-600 font-semibold mt-0.5">${esc(call.subtitle)}</p>
                             ${call.phone ? `<a href="tel:${call.phone}" class="inline-flex items-center gap-1 mt-1 text-xs font-bold text-emerald-600 hover:text-emerald-800">📞 ${call.phone}</a>` : ''}
                         </div>
                         <button onclick="toggleCallDone('${call.id}')" class="px-3 py-1 rounded-full text-xs font-bold border transition ${call.done ? 'bg-emerald-100 border-emerald-300 text-emerald-800' : 'bg-slate-100 border-slate-200 text-slate-500'}">
@@ -761,20 +825,20 @@ function renderBudget() {
         container.innerHTML = `<div class="p-8 text-center text-slate-400 text-sm">אין עדיין הוצאות רשומות במערכת.</div>`;
     } else {
         budget.forEach(exp => {
-            totalExpenses += exp.totalAmount;
-            
-            // חישוב כמה שולם בפועל מתוך כל תתי-התשלומים
-            const expPaid = exp.payments.reduce((sum, p) => sum + p.amount, 0);
+            totalExpenses += (exp.totalAmount || 0);
+
+            // חישוב כמה שולם בפועל מתוך כל תתי-התשלומים — defensive for legacy entries
+            const expPaid = (exp.payments || []).reduce((sum, p) => sum + (p.amount || 0), 0);
             totalPaid += expPaid;
             
-            const remaining = exp.totalAmount - expPaid;
+            const remaining = (exp.totalAmount || 0) - expPaid;
 
             const itemHtml = `
                 <div class="p-5 border-b border-slate-100 space-y-3" data-exp-id="${exp.id}">
                     <div class="flex justify-between items-start">
                         <div>
-                            <h4 class="text-sm font-bold text-slate-800">${exp.name}</h4>
-                            <p class="text-xs text-indigo-600 font-semibold mt-0.5">סה"כ: ${exp.totalAmount.toLocaleString()} ₪</p>
+                            <h4 class="text-sm font-bold text-slate-800">${esc(exp.name)}</h4>
+                            <p class="text-xs text-indigo-600 font-semibold mt-0.5">סה"כ: ${(exp.totalAmount || 0).toLocaleString()} ₪</p>
                         </div>
                         <div class="flex gap-2">
                             <button onclick="addPaymentToExpense('${exp.id}')" class="bg-indigo-50 text-indigo-700 px-2 py-1 rounded text-[10px] font-bold">➕ הוסף תשלום</button>
@@ -784,10 +848,10 @@ function renderBudget() {
                     
                     <div class="bg-slate-50 p-3 rounded-xl space-y-1">
                         <span class="text-[10px] font-bold text-slate-500 uppercase">פירוט תשלומים:</span>
-                        ${exp.payments.map(p => `
+                        ${(exp.payments || []).map(p => `
                             <div class="flex justify-between text-xs text-slate-700">
                                 <span>${p.date} (${p.method})</span>
-                                <span class="font-bold">${p.amount.toLocaleString()} ₪</span>
+                                <span class="font-bold">${(p.amount || 0).toLocaleString()} ₪</span>
                             </div>
                         `).join('')}
                     </div>
@@ -809,7 +873,7 @@ function renderBudget() {
 
     const currentMax = typeof maxBudget !== "undefined" ? maxBudget : 33000;
     // כאן התיקון: חישוב האחוזים לפי הסכום הכולל (totalExpenses)
-    const progressPercent = Math.min(100, Math.round((totalExpenses / currentMax) * 100));
+    const progressPercent = Math.min(100, Math.round((totalExpenses / Math.max(1, currentMax)) * 100));
     
     safeSetText('budgetProgressPercent', `${progressPercent}% מנוצל`);
     
@@ -820,6 +884,32 @@ function renderBudget() {
     const progressBar = document.getElementById('budgetProgressBar');
     if (progressBar) {
         progressBar.style.width = `${progressPercent}%`;
+    }
+
+    // Budget donut chart
+    const donutEl = document.getElementById('budgetDonut');
+    if (donutEl) {
+        const r = 52, cx = 70, cy = 70;
+        const C = 2 * Math.PI * r;
+        const safeMax = Math.max(1, currentMax);
+        const expLen = Math.min(1, totalExpenses / safeMax) * C;
+        const paidLen = Math.min(expLen, (totalPaid / safeMax) * C);
+        donutEl.innerHTML = `
+            <svg width="140" height="140" viewBox="0 0 140 140" style="transform:rotate(-90deg);display:block;">
+                <circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="#e2e8f0" stroke-width="14"/>
+                <circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="#f59e0b" stroke-width="14"
+                    stroke-dasharray="${expLen.toFixed(2)} ${C.toFixed(2)}" stroke-linecap="round"/>
+                <circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="#10b981" stroke-width="14"
+                    stroke-dasharray="${paidLen.toFixed(2)} ${C.toFixed(2)}" stroke-linecap="round"/>
+            </svg>
+            <div style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;pointer-events:none;">
+                <span style="font-size:1.1rem;font-weight:800;color:#1e293b;line-height:1;">${Math.round(Math.min(100, (totalExpenses / safeMax) * 100))}%</span>
+                <span style="font-size:9px;color:#94a3b8;font-weight:700;text-transform:uppercase;margin-top:2px;letter-spacing:.05em;">מנוצל</span>
+            </div>
+        `;
+        safeSetText('donutPaidLabel', totalPaid.toLocaleString() + ' ₪');
+        safeSetText('donutCommittedLabel', Math.max(0, totalExpenses - totalPaid).toLocaleString() + ' ₪');
+        safeSetText('donutRemainingLabel', Math.max(0, currentMax - totalExpenses).toLocaleString() + ' ₪');
     }
 }
 

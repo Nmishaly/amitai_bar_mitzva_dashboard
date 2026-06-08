@@ -70,6 +70,12 @@
         </div>
     </header>
 
+    <!-- EVENT DAY BANNER — shown automatically on June 12 and after -->
+    <div id="eventDayBanner" class="hidden bg-gradient-to-r from-amber-500 via-amber-400 to-amber-500 text-white text-center py-3 px-4 text-sm font-extrabold shadow-lg">
+        🎉 מזל טוב! היום הוא יום שבת בר המצווה של אמיתי! 🌟
+        <button onclick="switchTab('schedule')" class="underline ms-3 font-extrabold hover:text-amber-100 transition">← ללוח הזמנים</button>
+    </div>
+
     <!-- MAIN CONTAINER -->
     <main class="max-w-4xl mx-auto px-4 mt-6 pb-24 sm:pb-6">
         
@@ -361,6 +367,19 @@
                     </div>
                 </div>
 
+                <!-- Dietary preference -->
+                <div class="mt-3 flex flex-wrap items-center gap-3">
+                    <label class="text-xs font-bold text-slate-600 shrink-0">🥗 העדפה תזונתית:</label>
+                    <select id="rsvpDietary" class="p-2 border border-slate-200 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-teal-500 font-medium">
+                        <option value="">ללא הגבלה מיוחדת</option>
+                        <option value="vegetarian">🥬 צמחוני</option>
+                        <option value="vegan">🌱 טבעוני</option>
+                        <option value="gluten-free">🚫 ללא גלוטן</option>
+                        <option value="mehadrin">✡️ כשרות מהדרין</option>
+                        <option value="allergy">⚠️ אלרגיה / רגישות</option>
+                    </select>
+                </div>
+
                 <div class="mt-4 p-3 bg-slate-50 rounded-xl">
                     <span class="block text-xs font-bold text-slate-600 mb-2">🍽️ באילו ארוחות משתתפים?</span>
                     <div class="flex flex-wrap gap-4">
@@ -479,7 +498,7 @@
                         <span class="text-indigo-900" id="resWater">0 בקבוקים</span>
                     </div>
                     <div class="flex justify-between border-b border-indigo-50 pb-2">
-                        <span class="font-medium text-emerald-900">🥤 שתייה מתוקה מחושבת (לפי 0.75 ליטר לאדם):</span>
+                        <span class="font-medium text-emerald-900">🥤 שתייה מתוקה מחושבת (לפי 0.5 ליטר לאדם לארוחה):</span>
                         <span class="text-emerald-800" id="resSweetDrinks">0 בקבוקים</span>
                     </div>
                 </div>
@@ -513,10 +532,22 @@
 
             <!-- Shopping List Render -->
             <div class="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
-                <div class="bg-slate-50 px-5 py-4 border-b border-slate-100">
+                <div class="bg-slate-50 px-5 py-4 border-b border-slate-100 flex justify-between items-center">
                     <h2 class="font-extrabold text-slate-700 flex items-center gap-2">
-                        <span>🛒</span> רשימת קניות מרוכזת (סמנו וי בסופר!)
+                        <span>🛒</span> רשימת קניות מרוכזת
                     </h2>
+                    <button id="btnShopSelectMode" onclick="toggleShopSelectMode()"
+                        class="text-xs font-bold text-indigo-600 bg-indigo-50 border border-indigo-100 px-3 py-1.5 rounded-lg hover:bg-indigo-100 transition">
+                        ☑ בחר מרובה
+                    </button>
+                </div>
+                <!-- Batch buy action bar — hidden until select mode is active -->
+                <div id="batchBuyBar" class="hidden bg-indigo-600 px-4 py-3 flex justify-between items-center">
+                    <span id="batchBuyCount" class="text-xs font-bold text-white">0 נבחרו</span>
+                    <button onclick="batchBuySelected()"
+                        class="bg-white text-indigo-700 font-extrabold px-4 py-1.5 rounded-lg text-xs hover:bg-indigo-50 transition">
+                        ✅ סמן נבחרים כנרכשו
+                    </button>
                 </div>
                 <div class="divide-y divide-slate-100" id="shoppingListContainer"></div>
             </div>
@@ -629,6 +660,25 @@
                 <!-- Budget Warning Badge -->
                 <div id="budgetWarningBadge" class="hidden mt-4 p-3 bg-red-100 text-red-800 rounded-xl text-xs font-bold text-center border border-red-200">
                     ⚠️ שימו לב: חרגתם מיעד התקציב!
+                </div>
+
+                <!-- Budget Donut Chart -->
+                <div class="mt-5 flex items-center gap-6 flex-wrap border-t border-slate-100 pt-4">
+                    <div id="budgetDonut" class="relative shrink-0" style="width:140px;height:140px;"></div>
+                    <div class="space-y-2 text-xs font-semibold">
+                        <div class="flex items-center gap-2">
+                            <span class="inline-block w-3 h-3 rounded-full bg-emerald-500 shrink-0"></span>
+                            <span class="text-slate-600">שולם בפועל: <span id="donutPaidLabel" class="text-emerald-700 font-bold">0 ₪</span></span>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <span class="inline-block w-3 h-3 rounded-full bg-amber-500 shrink-0"></span>
+                            <span class="text-slate-600">מחויב טרם שולם: <span id="donutCommittedLabel" class="text-amber-700 font-bold">0 ₪</span></span>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <span class="inline-block w-3 h-3 rounded-full bg-slate-300 shrink-0"></span>
+                            <span class="text-slate-600">נותר פנוי: <span id="donutRemainingLabel" class="text-slate-700 font-bold">0 ₪</span></span>
+                        </div>
+                    </div>
                 </div>
             </div>
 
@@ -914,6 +964,13 @@ const firebaseConfig = {
     <script src="js/app.js"></script>
     <script src="js/ui.js"></script>
 
+
+    <!-- FAB — context-aware quick-add button -->
+    <button id="fabBtn" onclick="fabAction()"
+        class="fixed bottom-20 sm:bottom-6 right-4 sm:right-6 z-30 w-14 h-14 rounded-full bg-indigo-600 hover:bg-indigo-700 active:scale-95 text-white shadow-2xl flex items-center justify-center transition-all duration-150 text-3xl font-light leading-none select-none"
+        title="הוסף חדש" aria-label="הוסף חדש">
+        +
+    </button>
 
     <!-- MOBILE BOTTOM NAV -->
     <nav class="sm:hidden fixed bottom-0 right-0 left-0 bg-white/95 backdrop-blur-md border-t border-slate-200/80 shadow-xl z-40 flex justify-around items-center px-2 pt-1 pb-safe" style="padding-bottom: max(env(safe-area-inset-bottom), 8px);">

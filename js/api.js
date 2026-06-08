@@ -51,18 +51,21 @@ function handleFirestoreError(error, context) {
 }
 
 async function seedCloud() {
-    // Race condition guard: check a seed-lock document first
+    // Atomic lock via transaction — prevents race condition when two devices load simultaneously
     const lockRef = getCollectionRef('_meta').doc('seedLock');
     try {
-        const lockDoc = await lockRef.get();
-        if (lockDoc.exists) {
-            console.log("Seed already in progress or done by another device. Skipping.");
+        await db.runTransaction(async (tx) => {
+            const lockDoc = await tx.get(lockRef);
+            if (lockDoc.exists) throw new Error('already_seeded');
+            tx.set(lockRef, { seededAt: Date.now(), seededBy: navigator.userAgent.slice(0, 50) });
+        });
+    } catch(e) {
+        if (e.message === 'already_seeded') {
+            console.log("Seed already done by another device. Skipping.");
             return;
         }
-        // Set lock immediately before seeding
-        await lockRef.set({ seededAt: Date.now(), seededBy: navigator.userAgent.slice(0, 50) });
-    } catch(e) {
         console.warn("Could not acquire seed lock:", e);
+        return;
     }
 
     console.log("Cloud is empty. Seeding all local defaults to cloud...");
@@ -94,11 +97,20 @@ async function seedCloud() {
     }
 }
 
+const _firestoreUnsubs = [];
+
+function stopFirebaseListeners() {
+    _firestoreUnsubs.forEach(u => { try { u(); } catch(e) {} });
+    _firestoreUnsubs.length = 0;
+}
+
 function startFirebaseListeners() {
     if (!db) return;
 
     const user = firebase.auth().currentUser;
     if (!user) return; // Guard operation (Rule 3)
+
+    stopFirebaseListeners(); // Clear any previous listeners before attaching new ones
 
     const tasksRef = getCollectionRef('tasks');
     const shoppingRef = getCollectionRef('shopping');
@@ -108,7 +120,7 @@ function startFirebaseListeners() {
     const budgetRef = getCollectionRef('budget');
 
     const logRef = getCollectionRef('logistics');
-    logRef.onSnapshot(snapshot => {
+    _firestoreUnsubs.push(logRef.onSnapshot(snapshot => {
         const cloudLogistics = [];
         if (!snapshot.empty) {
             snapshot.forEach(doc => cloudLogistics.push(doc.data()));
@@ -118,11 +130,11 @@ function startFirebaseListeners() {
         if (currentTab === 'logistics') renderLogistics(currentLogisticsFilter);
     }, error => {
         handleFirestoreError(error, "לוגיסטיקה");
-    });
+    }));
 
     // Schedule snapshot
     const schRef = getCollectionRef('schedule');
-    schRef.onSnapshot(snapshot => {
+    _firestoreUnsubs.push(schRef.onSnapshot(snapshot => {
         const cloudSchedule = [];
         snapshot.forEach(doc => cloudSchedule.push(doc.data()));
         schedule = cloudSchedule;
@@ -130,11 +142,11 @@ function startFirebaseListeners() {
         if (currentTab === 'schedule') renderSchedule();
     }, error => {
         handleFirestoreError(error, "לו\"ז");
-    });
-    
+    }));
+
     // Menu snapshot
     const menuRef = getCollectionRef('menu');
-    menuRef.onSnapshot(snapshot => {
+    _firestoreUnsubs.push(menuRef.onSnapshot(snapshot => {
         const cloudMenu = [];
         if (!snapshot.empty) {
             snapshot.forEach(doc => cloudMenu.push(doc.data()));
@@ -144,10 +156,10 @@ function startFirebaseListeners() {
         if (currentTab === 'menu') renderMenu();
     }, error => {
         handleFirestoreError(error, "תפריט");
-    });
+    }));
 
     // Tasks snapshot
-    tasksRef.onSnapshot(async (snapshot) => {
+    _firestoreUnsubs.push(tasksRef.onSnapshot(async (snapshot) => {
         if (snapshot.empty && !isSeeding) {
             isSeeding = true;
             await seedCloud();
@@ -166,10 +178,10 @@ function startFirebaseListeners() {
         if (currentTab === 'recent') renderRecentTasks();
     }, error => {
         handleFirestoreError(error, "משימות");
-    });
+    }));
 
     // Shopping snapshot
-    shoppingRef.onSnapshot(snapshot => {
+    _firestoreUnsubs.push(shoppingRef.onSnapshot(snapshot => {
         const cloudShopping = [];
         if (!snapshot.empty) {
             snapshot.forEach(doc => {
@@ -181,10 +193,10 @@ function startFirebaseListeners() {
         if (currentTab === 'shopping') renderShopping();
     }, error => {
         handleFirestoreError(error, "קניות");
-    });
+    }));
 
     // Rooms snapshot
-    roomsRef.onSnapshot(snapshot => {
+    _firestoreUnsubs.push(roomsRef.onSnapshot(snapshot => {
         const cloudRooms = [];
         if (!snapshot.empty) {
             snapshot.forEach(doc => {
@@ -196,10 +208,10 @@ function startFirebaseListeners() {
         if (currentTab === 'rooms') renderRooms();
     }, error => {
         handleFirestoreError(error, "חדרים");
-    });
+    }));
 
     // Calls snapshot
-    callsRef.onSnapshot(snapshot => {
+    _firestoreUnsubs.push(callsRef.onSnapshot(snapshot => {
         const cloudCalls = [];
         if (!snapshot.empty) {
             snapshot.forEach(doc => {
@@ -211,10 +223,10 @@ function startFirebaseListeners() {
         if (currentTab === 'calls') renderCalls();
     }, error => {
         handleFirestoreError(error, "בירורים");
-    });
+    }));
 
     // RSVPs snapshot
-    rsvpsRef.onSnapshot(snapshot => {
+    _firestoreUnsubs.push(rsvpsRef.onSnapshot(snapshot => {
         const cloudRsvps = [];
         if (!snapshot.empty) {
             snapshot.forEach(doc => {
@@ -226,11 +238,11 @@ function startFirebaseListeners() {
         if (currentTab === 'rsvp') renderRsvps();
     }, error => {
         handleFirestoreError(error, "אישורי הגעה");
-    });
+    }));
 
     // Settings snapshot (maxBudget + shared settings)
     const settingsRef = getCollectionRef('_settings').doc('app');
-    settingsRef.onSnapshot(snapshot => {
+    _firestoreUnsubs.push(settingsRef.onSnapshot(snapshot => {
         if (snapshot.exists) {
             const data = snapshot.data();
             if (data.maxBudget && typeof maxBudget !== 'undefined') {
@@ -245,10 +257,10 @@ function startFirebaseListeners() {
         }
     }, error => {
         handleFirestoreError(error, "הגדרות");
-    });
+    }));
 
     // Budget snapshot
-    budgetRef.onSnapshot(snapshot => {
+    _firestoreUnsubs.push(budgetRef.onSnapshot(snapshot => {
         const cloudBudget = [];
         if (!snapshot.empty) {
             snapshot.forEach(doc => {
@@ -260,11 +272,11 @@ function startFirebaseListeners() {
         if (currentTab === 'budget') renderBudget();
     }, error => {
         handleFirestoreError(error, "תקציב");
-    });
+    }));
 
     // External Locations snapshot
     const extLocRef = getCollectionRef('externalLocations');
-    extLocRef.onSnapshot(snapshot => {
+    _firestoreUnsubs.push(extLocRef.onSnapshot(snapshot => {
         const cloudExtLocs = [];
         if (!snapshot.empty) {
             snapshot.forEach(doc => cloudExtLocs.push(doc.data()));
@@ -274,7 +286,7 @@ function startFirebaseListeners() {
         if (currentTab === 'rooms') renderRooms();
     }, error => {
         handleFirestoreError(error, "מיקומים חיצוניים");
-    });
+    }));
 }
 
 let _isConnecting = false;

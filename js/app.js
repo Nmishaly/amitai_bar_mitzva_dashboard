@@ -70,6 +70,7 @@ let schedule = JSON.parse(localStorage.getItem('bm_schedule')) || [];
 let editingScheduleId = null;
 let currentLogisticsFilter = 'all';
 let currentTab = 'tasks';
+let currentWaText = '';
 let editingTaskId = null; // מזהה המשימה שנמצאת כרגע בעריכה
 let currentResponsibleFilter = 'all'; // פילטר סינון גלובלי למשימות
 let taskViewMode = localStorage.getItem('bm_taskViewMode') || 'dynamic'; // dynamic or sorted
@@ -223,6 +224,8 @@ async function addNewRsvp() {
     const adults = adultsEl ? (parseInt(adultsEl.value) || 0) : 0;
     const kids = kidsEl ? (parseInt(kidsEl.value) || 0) : 0;
     const sleep = sleepEl ? sleepEl.value : 'no';
+    const dietaryEl = document.getElementById('rsvpDietary');
+    const dietary = dietaryEl ? dietaryEl.value : '';
 
     if (!name) {
         showToast("אנא הזינו שם אורח או משפחה!");
@@ -244,7 +247,8 @@ async function addNewRsvp() {
         adults: adults,
         kids: kids,
         sleep: sleep,
-        meals: mealsSelected
+        meals: mealsSelected,
+        dietary: dietary
     };
 
     // Immediate local Optimistic Update
@@ -261,6 +265,7 @@ async function addNewRsvp() {
     if (kidsEl) kidsEl.value = "0";
     if (sleepEl) sleepEl.value = "no";
     toggleAllMeals(true);
+    if (dietaryEl) dietaryEl.value = '';
 
     showToast("האורח נרשם בהצלחה!");
 }
@@ -382,13 +387,14 @@ async function updateTaskStatus(taskId, newStatus) {
     const index = tasks.findIndex(t => t.id === taskId);
     if (index !== -1) {
         tasks[index].status = newStatus;
+        tasks[index].updatedAt = Date.now();
         saveLocalState();
         renderTasks();
         renderRecentTasks();
     }
 
     if (isCloudConnected && db) {
-        dbUpdate('tasks', taskId, { status: newStatus });
+        dbUpdate('tasks', taskId, { status: newStatus, updatedAt: Date.now() });
     }
 }
 
@@ -442,7 +448,8 @@ async function saveEditTask(taskId, category) {
             updateData.deadline = deadlineInput.value;
         }
     } else {
-        updateData.deadline = "2026-06-11"; // Alon Default
+        const existingTask = tasks.find(t => t.id === taskId);
+        updateData.deadline = existingTask ? (existingTask.deadline || "2026-06-11") : "2026-06-11";
     }
 
     // 1. Optimistic Update (Immediate Feedback to prevent interface freezes)
@@ -1290,6 +1297,80 @@ async function removeGuestFromExtLocation(locId, idx) {
     renderRooms();
     if (isCloudConnected && db) dbUpdate('externalLocations', locId, { guests: loc.guests });
     showToast(`${removed} הוסר`);
+}
+
+// ─── FAB — Floating Action Button ───────────────────────────
+function fabAction() {
+    const targets = {
+        'tasks': 'newTaskTitle',
+        'shopping': 'newShopTitle',
+        'rsvp': 'rsvpName',
+        'rooms': 'newRoomName',
+        'budget': 'newExpName',
+        'calls': 'newCallTitle',
+        'logistics': 'newLogName',
+        'menu': 'newMenuName',
+        'schedule': 'schTitle'
+    };
+    const targetId = targets[currentTab];
+    if (targetId) {
+        const el = document.getElementById(targetId);
+        if (el) {
+            el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            setTimeout(() => el.focus(), 350);
+        }
+    }
+}
+
+// ─── Batch shopping selection ────────────────────────────────
+let shopSelectMode = false;
+const selectedShopItems = new Set();
+
+function toggleShopSelectMode() {
+    shopSelectMode = !shopSelectMode;
+    selectedShopItems.clear();
+    const btn = document.getElementById('btnShopSelectMode');
+    if (btn) btn.textContent = shopSelectMode ? '✕ ביטול' : '☑ בחר מרובה';
+    const bar = document.getElementById('batchBuyBar');
+    if (bar) bar.classList.toggle('hidden', !shopSelectMode);
+    renderShopping();
+}
+
+function toggleShopItemSelect(itemId) {
+    if (selectedShopItems.has(itemId)) selectedShopItems.delete(itemId);
+    else selectedShopItems.add(itemId);
+    const countEl = document.getElementById('batchBuyCount');
+    if (countEl) countEl.textContent = `${selectedShopItems.size} נבחרו`;
+    // Instantly highlight the tapped row without full re-render
+    const el = document.querySelector(`[data-batch-id="${itemId}"]`);
+    if (el) {
+        if (selectedShopItems.has(itemId)) el.classList.add('bg-indigo-50');
+        else el.classList.remove('bg-indigo-50');
+        const cb = el.querySelector('input[type="checkbox"]');
+        if (cb) cb.checked = selectedShopItems.has(itemId);
+    }
+}
+
+async function batchBuySelected() {
+    if (selectedShopItems.size === 0) { showToast('לא נבחרו פריטים!'); return; }
+    const ids = [...selectedShopItems];
+    const now = Date.now();
+    ids.forEach(id => {
+        const idx = shopping.findIndex(s => s.id === id);
+        if (idx !== -1) { shopping[idx].bought = true; shopping[idx].boughtAt = now; }
+    });
+    selectedShopItems.clear();
+    shopSelectMode = false;
+    saveLocalState();
+    renderShopping();
+    if (isCloudConnected && db) {
+        const fbBatch = db.batch();
+        ids.forEach(id => {
+            fbBatch.set(getCollectionRef('shopping').doc(id), { bought: true, boughtAt: now }, { merge: true });
+        });
+        await fbBatch.commit().catch(e => console.error('Batch commit error:', e));
+    }
+    showToast(`${ids.length} פריטים סומנו כנרכשו! ✅`);
 }
 
 function copyRoomsSummaryToClipboard() {
