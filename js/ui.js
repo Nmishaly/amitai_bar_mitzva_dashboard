@@ -503,64 +503,98 @@ function renderRsvps() {
     calculateDrinks();
 }
 
+function _renderShopItemRow(container, item) {
+    const inBatchMode = typeof shopSelectMode !== 'undefined' && shopSelectMode;
+    const isSelected = inBatchMode && typeof selectedShopItems !== 'undefined' && selectedShopItems.has(item.id);
+    const freshBadge = item.isFresh
+        ? `<button title="מוצר טרי — לחץ לשינוי" onclick="toggleShopItemFresh('${item.id}')" class="shrink-0 text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-green-100 text-green-700 border border-green-200 hover:bg-green-200 transition">🌿 טרי</button>`
+        : `<button title="מוצר יבש — לחץ לשינוי" onclick="toggleShopItemFresh('${item.id}')" class="shrink-0 text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-slate-100 text-slate-400 border border-slate-200 hover:bg-slate-200 transition">📦 יבש</button>`;
+
+    if (inBatchMode) {
+        const itemHtml = `
+            <div class="p-4 flex items-center gap-3 cursor-pointer transition-colors ${isSelected ? 'bg-indigo-50' : 'hover:bg-slate-50'}"
+                 data-batch-id="${item.id}" onclick="toggleShopItemSelect('${item.id}')">
+                <input type="checkbox" ${isSelected ? 'checked' : ''} class="w-5 h-5 rounded border-slate-300 text-indigo-600 pointer-events-none" readonly>
+                <span class="text-sm font-medium ${item.bought ? 'line-through text-slate-400' : 'text-slate-800'} flex-1">${item.title}</span>
+                ${item.bought ? '<span class="text-[10px] text-emerald-600 font-bold shrink-0">נרכש ✓</span>' : ''}
+            </div>
+        `;
+        container.insertAdjacentHTML('beforeend', itemHtml);
+    } else {
+        const itemHtml = `
+            <div class="p-4 flex justify-between items-center hover:bg-slate-50 transition-colors gap-2" style="transition:transform 0.2s ease,background-color 0.15s;">
+                <label class="flex items-center gap-3 cursor-pointer select-none flex-1 min-w-0">
+                    <input type="checkbox" ${item.bought ? 'checked' : ''} onchange="toggleShopItem('${item.id}')" class="w-5 h-5 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500 cursor-pointer shrink-0">
+                    <span class="text-sm font-medium ${item.bought ? 'line-through text-slate-400' : 'text-slate-800'} truncate">${item.title}</span>
+                </label>
+                <div class="flex items-center gap-1.5 shrink-0">
+                    ${freshBadge}
+                    <button onclick="deleteShopItem('${item.id}')" class="p-1.5 text-slate-300 hover:text-red-500 transition rounded-md hover:bg-red-50">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+                    </button>
+                </div>
+            </div>
+        `;
+        container.insertAdjacentHTML('beforeend', itemHtml);
+        if (!item.bought) attachSwipe(container.lastElementChild, () => toggleShopItem(item.id));
+    }
+}
+
 function renderShopping() {
     const container = document.getElementById('shoppingListContainer');
     if (!container) return;
     container.innerHTML = "";
 
-    const categories = {
-        'disposable': '🍽️ כלים חד פעמיים',
-        'drinks': '🥤 שתייה וקפה',
-        'synagogue': '⛪ בית הכנסת',
-        'dessert': '🍰 קינוחים ואוכל משלים',
-        'villa': '🏡 אירוח בוילה'
-    };
+    const viewMode = typeof shopViewMode !== 'undefined' ? shopViewMode : 'category';
 
-    Object.keys(categories).forEach(catKey => {
-        const catItems = shopping.filter(item => item.category === catKey);
-        if (catItems.length === 0) return;
+    if (viewMode === 'freshness') {
+        const freshItems = [...shopping].filter(item => item.isFresh).sort((a, b) => (a.bought ? 1 : 0) - (b.bought ? 1 : 0));
+        const dryItems   = [...shopping].filter(item => !item.isFresh).sort((a, b) => (a.bought ? 1 : 0) - (b.bought ? 1 : 0));
 
-        let categorySectionHtml = `
-            <div class="bg-slate-50/50 px-4 py-2 font-bold text-xs text-indigo-900 border-y border-slate-100 uppercase tracking-wider">
-                ${categories[catKey]}
-            </div>
-        `;
-        container.insertAdjacentHTML('beforeend', categorySectionHtml);
+        if (freshItems.length > 0) {
+            container.insertAdjacentHTML('beforeend', `
+                <div class="bg-green-50 px-4 py-2.5 font-bold text-xs text-green-900 border-y border-green-100 uppercase tracking-wider flex items-center gap-2">
+                    🌿 מוצרים טריים — לקנות ביום חמישי לפני השבת
+                </div>
+            `);
+            freshItems.forEach(item => _renderShopItemRow(container, item));
+        }
 
-        // Sort: unbought first, bought last
-        const sortedItems = [...catItems].sort((a, b) => (a.bought ? 1 : 0) - (b.bought ? 1 : 0));
-        sortedItems.forEach(item => {
-            const inBatchMode = typeof shopSelectMode !== 'undefined' && shopSelectMode;
-            const isSelected = inBatchMode && typeof selectedShopItems !== 'undefined' && selectedShopItems.has(item.id);
+        if (dryItems.length > 0) {
+            container.insertAdjacentHTML('beforeend', `
+                <div class="bg-amber-50 px-4 py-2.5 font-bold text-xs text-amber-900 border-y border-amber-100 uppercase tracking-wider flex items-center gap-2">
+                    📦 מוצרים יבשים — אפשר לקנות מוקדם יותר
+                </div>
+            `);
+            dryItems.forEach(item => _renderShopItemRow(container, item));
+        }
 
-            if (inBatchMode) {
-                const itemHtml = `
-                    <div class="p-4 flex items-center gap-3 cursor-pointer transition-colors ${isSelected ? 'bg-indigo-50' : 'hover:bg-slate-50'}"
-                         data-batch-id="${item.id}" onclick="toggleShopItemSelect('${item.id}')">
-                        <input type="checkbox" ${isSelected ? 'checked' : ''} class="w-5 h-5 rounded border-slate-300 text-indigo-600 pointer-events-none" readonly>
-                        <span class="text-sm font-medium ${item.bought ? 'line-through text-slate-400' : 'text-slate-800'} flex-1">${item.title}</span>
-                        ${item.bought ? '<span class="text-[10px] text-emerald-600 font-bold shrink-0">נרכש ✓</span>' : ''}
-                    </div>
-                `;
-                container.insertAdjacentHTML('beforeend', itemHtml);
-            } else {
-                const itemHtml = `
-                    <div class="p-4 flex justify-between items-center hover:bg-slate-50 transition-colors" style="transition:transform 0.2s ease,background-color 0.15s;">
-                        <label class="flex items-center gap-3 cursor-pointer select-none flex-1">
-                            <input type="checkbox" ${item.bought ? 'checked' : ''} onchange="toggleShopItem('${item.id}')" class="w-5 h-5 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500 cursor-pointer">
-                            <span class="text-sm font-medium ${item.bought ? 'line-through text-slate-400' : 'text-slate-800'}">${item.title}</span>
-                        </label>
-                        <button onclick="deleteShopItem('${item.id}')" class="p-1.5 text-slate-300 hover:text-red-500 transition rounded-md hover:bg-red-50">
-                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
-                        </button>
-                    </div>
-                `;
-                container.insertAdjacentHTML('beforeend', itemHtml);
-                // Swipe right to mark as bought (mobile only)
-                if (!item.bought) attachSwipe(container.lastElementChild, () => toggleShopItem(item.id));
-            }
+        if (freshItems.length === 0 && dryItems.length === 0) {
+            container.innerHTML = '<div class="p-6 text-center text-slate-400 text-sm">אין פריטים ברשימה</div>';
+        }
+    } else {
+        const categories = {
+            'disposable': '🍽️ כלים חד פעמיים',
+            'drinks': '🥤 שתייה וקפה',
+            'synagogue': '⛪ בית הכנסת',
+            'dessert': '🍰 קינוחים ואוכל משלים',
+            'villa': '🏡 אירוח בוילה'
+        };
+
+        Object.keys(categories).forEach(catKey => {
+            const catItems = shopping.filter(item => item.category === catKey);
+            if (catItems.length === 0) return;
+
+            container.insertAdjacentHTML('beforeend', `
+                <div class="bg-slate-50/50 px-4 py-2 font-bold text-xs text-indigo-900 border-y border-slate-100 uppercase tracking-wider">
+                    ${categories[catKey]}
+                </div>
+            `);
+
+            const sortedItems = [...catItems].sort((a, b) => (a.bought ? 1 : 0) - (b.bought ? 1 : 0));
+            sortedItems.forEach(item => _renderShopItemRow(container, item));
         });
-    });
+    }
 
     calculateStats();
 }

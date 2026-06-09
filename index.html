@@ -523,7 +523,11 @@
                         <option value="villa">🏡 אירוח בוילה</option>
                     </select>
                 </div>
-                <div class="flex justify-end mt-3">
+                <div class="flex items-center justify-between mt-3 gap-3 flex-wrap">
+                    <label class="flex items-center gap-2 text-sm text-slate-600 cursor-pointer select-none">
+                        <input type="checkbox" id="newShopIsFresh" class="w-4 h-4 rounded border-slate-300 text-green-600 focus:ring-green-500">
+                        <span>🌿 מוצר טרי (לקנות ביום חמישי)</span>
+                    </label>
                     <button onclick="addNewShopItem()" class="bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-2 px-6 rounded-lg text-sm transition shadow">
                         הוסף לסל
                     </button>
@@ -532,11 +536,22 @@
 
             <!-- Shopping List Render -->
             <div class="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
-                <div class="bg-slate-50 px-5 py-4 border-b border-slate-100 flex justify-between items-center">
+                <div class="bg-slate-50 px-5 py-4 border-b border-slate-100 flex justify-between items-center flex-wrap gap-2">
                     <h2 class="font-extrabold text-slate-700 flex items-center gap-2">
                         <span>🛒</span> רשימת קניות מרוכזת
                     </h2>
-                    <div class="flex items-center gap-2">
+                    <div class="flex items-center gap-2 flex-wrap">
+                        <!-- View mode toggle -->
+                        <div class="flex rounded-lg border border-indigo-200 overflow-hidden text-xs font-bold">
+                            <button id="btnShopViewCategory" onclick="setShopViewMode('category')"
+                                class="px-3 py-1.5 bg-indigo-600 text-white transition">
+                                📋 קטגוריות
+                            </button>
+                            <button id="btnShopViewFreshness" onclick="setShopViewMode('freshness')"
+                                class="px-3 py-1.5 bg-white text-indigo-600 transition hover:bg-indigo-50">
+                                🗓️ לפי זמן קנייה
+                            </button>
+                        </div>
                         <button onclick="exportShoppingList()"
                             class="text-xs font-bold text-emerald-700 bg-emerald-50 border border-emerald-200 px-3 py-1.5 rounded-lg hover:bg-emerald-100 transition flex items-center gap-1">
                             📤 ייצוא

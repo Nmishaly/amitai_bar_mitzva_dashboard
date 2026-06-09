@@ -29,9 +29,9 @@ const defaultShopping = [
     { id: "s5", title: "סוכריות לזריקה (סוג רך)", category: "synagogue", bought: false },
     { id: "s6", title: "סלסלות יפות להחזקת הסוכריות", category: "synagogue", bought: false },
     { id: "s7", title: "חטיפים בשקיות קטנות לילדים בקידוש", category: "synagogue", bought: false },
-    { id: "s8", title: "אבטיחים ומלונים (לקנות קרוב לשבת)", category: "dessert", bought: false },
-    { id: "s9", title: "קרטיבים טבעיים", category: "dessert", bought: false },
-    { id: "s10", title: "קוגלים לקידוש בבית הכנסת", category: "dessert", bought: false },
+    { id: "s8", title: "אבטיחים ומלונים (לקנות קרוב לשבת)", category: "dessert", bought: false, isFresh: true },
+    { id: "s9", title: "קרטיבים טבעיים", category: "dessert", bought: false, isFresh: true },
+    { id: "s10", title: "קוגלים לקידוש בבית הכנסת", category: "dessert", bought: false, isFresh: true },
     { id: "s11", title: "כיבוד קל, עוגות יבשות ושתייה למתחם הלינה של האורחים בווילה", category: "villa", bought: false }
 ];
 
@@ -483,11 +483,13 @@ async function addNewShopItem() {
         return;
     }
 
+    const isFreshEl = document.getElementById('newShopIsFresh');
     const newItem = {
         id: 's_' + Date.now(),
         title: title,
         category: category,
-        bought: false
+        bought: false,
+        isFresh: isFreshEl ? isFreshEl.checked : false
     };
 
     shopping.push(newItem);
@@ -499,7 +501,20 @@ async function addNewShopItem() {
     }
 
     titleEl.value = "";
+    if (isFreshEl) isFreshEl.checked = false;
     showToast("המוצר נוסף לסל!");
+}
+
+async function toggleShopItemFresh(itemId) {
+    const index = shopping.findIndex(s => s.id === itemId);
+    if (index !== -1) {
+        shopping[index].isFresh = !shopping[index].isFresh;
+        saveLocalState();
+        renderShopping();
+        if (isCloudConnected && db) {
+            dbUpdate('shopping', itemId, { isFresh: shopping[index].isFresh });
+        }
+    }
 }
 
 async function toggleShopItem(itemId) {
@@ -1394,6 +1409,28 @@ function fabAction() {
             setTimeout(() => el.focus(), 350);
         }
     }
+}
+
+// ─── Shopping view mode ───────────────────────────────────────
+let shopViewMode = 'category'; // 'category' | 'freshness'
+
+function setShopViewMode(mode) {
+    shopViewMode = mode;
+    const btnCat = document.getElementById('btnShopViewCategory');
+    const btnFresh = document.getElementById('btnShopViewFreshness');
+    if (btnCat) {
+        btnCat.classList.toggle('bg-indigo-600', mode === 'category');
+        btnCat.classList.toggle('text-white', mode === 'category');
+        btnCat.classList.toggle('text-indigo-600', mode !== 'category');
+        btnCat.classList.toggle('bg-white', mode !== 'category');
+    }
+    if (btnFresh) {
+        btnFresh.classList.toggle('bg-indigo-600', mode === 'freshness');
+        btnFresh.classList.toggle('text-white', mode === 'freshness');
+        btnFresh.classList.toggle('text-indigo-600', mode !== 'freshness');
+        btnFresh.classList.toggle('bg-white', mode !== 'freshness');
+    }
+    renderShopping();
 }
 
 // ─── Batch shopping selection ────────────────────────────────
