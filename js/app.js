@@ -529,6 +529,80 @@ async function deleteShopItem(itemId) {
     showToast("המוצר נמחק");
 }
 
+let _shoppingExportText = '';
+
+function exportShoppingList() {
+    const categories = {
+        'disposable': '🍽️ כלים חד פעמיים',
+        'drinks': '🥤 שתייה וקפה',
+        'synagogue': '⛪ בית הכנסת',
+        'dessert': '🍰 קינוחים ואוכל משלים',
+        'villa': '🏡 אירוח בוילה'
+    };
+
+    const remaining = shopping.filter(s => !s.bought);
+
+    if (remaining.length === 0) {
+        showToast('כל הפריטים כבר נרכשו! 🎉');
+        return;
+    }
+
+    const modal = document.getElementById('shoppingExportModal');
+    const content = document.getElementById('shoppingExportContent');
+    if (!modal || !content) return;
+
+    let html = '';
+    _shoppingExportText = `🛒 רשימת קניות — נשאר לקנות\n`;
+    _shoppingExportText += `═══════════════════════\n\n`;
+
+    Object.keys(categories).forEach(catKey => {
+        const catItems = remaining.filter(s => s.category === catKey);
+        if (catItems.length === 0) return;
+
+        html += `<div class="bg-slate-50 rounded-xl p-3">
+            <div class="font-bold text-slate-700 mb-2 text-sm">${categories[catKey]}</div>
+            <ul class="space-y-1.5">
+                ${catItems.map(item => `<li class="flex items-start gap-2 text-sm text-slate-600"><span class="text-slate-400 shrink-0">•</span><span>${item.title}</span></li>`).join('')}
+            </ul>
+        </div>`;
+
+        _shoppingExportText += `${categories[catKey]}\n`;
+        catItems.forEach(item => {
+            _shoppingExportText += `  • ${item.title}\n`;
+        });
+        _shoppingExportText += '\n';
+    });
+
+    _shoppingExportText += `───────────────────────\n`;
+    _shoppingExportText += `סה"כ נשאר: ${remaining.length} פריטים`;
+
+    html += `<div class="text-xs text-slate-400 text-center pt-1">סה"כ נשאר: ${remaining.length} פריטים לקנייה</div>`;
+
+    content.innerHTML = html;
+    modal.classList.remove('hidden');
+}
+
+function copyShoppingExport() {
+    if (!_shoppingExportText) return;
+    if (navigator.clipboard) {
+        navigator.clipboard.writeText(_shoppingExportText).then(() => showToast('הרשימה הועתקה! 📋'));
+    } else {
+        showToast('לא ניתן להעתיק בדפדפן זה');
+    }
+}
+
+function shareShoppingExport() {
+    if (!_shoppingExportText) return;
+    if (navigator.share) {
+        navigator.share({
+            title: 'רשימת קניות — בר המצווה של אמיתי',
+            text: _shoppingExportText
+        });
+    } else {
+        copyShoppingExport();
+    }
+}
+
 async function addGuestToRoom(roomId) {
     const inputElement = document.getElementById(`guestInput_${roomId}`);
     if (!inputElement) return;
