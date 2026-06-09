@@ -536,10 +536,16 @@
                     <h2 class="font-extrabold text-slate-700 flex items-center gap-2">
                         <span>🛒</span> רשימת קניות מרוכזת
                     </h2>
-                    <button id="btnShopSelectMode" onclick="toggleShopSelectMode()"
-                        class="text-xs font-bold text-indigo-600 bg-indigo-50 border border-indigo-100 px-3 py-1.5 rounded-lg hover:bg-indigo-100 transition">
-                        ☑ בחר מרובה
-                    </button>
+                    <div class="flex items-center gap-2">
+                        <button onclick="exportShoppingList()"
+                            class="text-xs font-bold text-emerald-700 bg-emerald-50 border border-emerald-200 px-3 py-1.5 rounded-lg hover:bg-emerald-100 transition flex items-center gap-1">
+                            📤 ייצוא
+                        </button>
+                        <button id="btnShopSelectMode" onclick="toggleShopSelectMode()"
+                            class="text-xs font-bold text-indigo-600 bg-indigo-50 border border-indigo-100 px-3 py-1.5 rounded-lg hover:bg-indigo-100 transition">
+                            ☑ בחר מרובה
+                        </button>
+                    </div>
                 </div>
                 <!-- Batch buy action bar — hidden until select mode is active -->
                 <div id="batchBuyBar" class="hidden bg-indigo-600 px-4 py-3 flex justify-between items-center">
@@ -954,6 +960,21 @@ const firebaseConfig = {
         </div>
     </div>
 
+
+    <!-- Shopping Export Modal -->
+    <div id="shoppingExportModal" class="hidden fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4" onclick="if(event.target===this)this.classList.add('hidden')">
+        <div class="bg-white rounded-2xl shadow-xl w-full max-w-lg p-6 space-y-4 max-h-[80vh] flex flex-col">
+            <div class="flex justify-between items-center shrink-0">
+                <h3 class="font-bold text-lg text-slate-800">🛒 נשאר לקנות</h3>
+                <button onclick="document.getElementById('shoppingExportModal').classList.add('hidden')" class="text-slate-400 hover:text-slate-600 font-bold text-xl leading-none">✕</button>
+            </div>
+            <div id="shoppingExportContent" class="space-y-3 overflow-y-auto flex-1"></div>
+            <div class="flex gap-2 shrink-0 pt-1">
+                <button onclick="copyShoppingExport()" class="flex-1 bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2.5 rounded-xl text-sm transition">📋 העתק ללוח</button>
+                <button onclick="shareShoppingExport()" class="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-2.5 rounded-xl text-sm transition">📤 שתף</button>
+            </div>
+        </div>
+    </div>
 
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
