@@ -545,6 +545,7 @@ async function deleteShopItem(itemId) {
 }
 
 let _shoppingExportText = '';
+let _budgetExportCsv = '';
 
 function exportShoppingList() {
     const categories = {
@@ -615,6 +616,138 @@ function shareShoppingExport() {
         });
     } else {
         copyShoppingExport();
+    }
+}
+
+function exportBudgetToGoogleSheets() {
+    if (budget.length === 0) {
+        showToast('אין הוצאות לייצוא עדיין');
+        return;
+    }
+
+    const currentMax = typeof maxBudget !== 'undefined' ? maxBudget : 33000;
+    let totalExpenses = 0;
+    let totalPaid = 0;
+
+    budget.forEach(exp => {
+        totalExpenses += (exp.totalAmount || 0);
+        totalPaid += (exp.payments || []).reduce((sum, p) => sum + (p.amount || 0), 0);
+    });
+
+    const today = new Date().toLocaleDateString('he-IL');
+
+    const rows = [];
+    rows.push(['סיכום תקציב — בר המצווה של אמיתי']);
+    rows.push(['תאריך ייצוא:', today]);
+    rows.push([]);
+    rows.push(['מדד', 'ערך (₪)']);
+    rows.push(['יעד תקציב', currentMax]);
+    rows.push(['סה"כ הוצאות', totalExpenses]);
+    rows.push(['שולם בפועל', totalPaid]);
+    rows.push(['נותר לספקים', totalExpenses - totalPaid]);
+    rows.push(['פנוי לתכנון', Math.max(0, currentMax - totalExpenses)]);
+    rows.push([]);
+    rows.push([]);
+    rows.push(['פירוט הוצאות']);
+    rows.push(['שם הוצאה', 'סה"כ מתוכנן (₪)', 'שולם (₪)', 'נותר לספק (₪)', 'תאריך תשלום', 'אמצעי תשלום', 'סכום תשלום (₪)']);
+
+    budget.forEach(exp => {
+        const expPaid = (exp.payments || []).reduce((sum, p) => sum + (p.amount || 0), 0);
+        const remaining = (exp.totalAmount || 0) - expPaid;
+        const payments = exp.payments || [];
+
+        if (payments.length === 0) {
+            rows.push([exp.name || '', exp.totalAmount || 0, 0, remaining, '', '', '']);
+        } else {
+            payments.forEach((p, i) => {
+                if (i === 0) {
+                    rows.push([exp.name || '', exp.totalAmount || 0, expPaid, remaining, p.date || '', p.method || '', p.amount || 0]);
+                } else {
+                    rows.push(['', '', '', '', p.date || '', p.method || '', p.amount || 0]);
+                }
+            });
+        }
+    });
+
+    const csvContent = rows.map(row =>
+        row.map(cell => {
+            const str = String(cell);
+            if (str.includes(',') || str.includes('"') || str.includes('\n')) {
+                return '"' + str.replace(/"/g, '""') + '"';
+            }
+            return str;
+        }).join(',')
+    ).join('\n');
+
+    _budgetExportCsv = '﻿' + csvContent;
+
+    // Build HTML preview for the modal
+    const modal = document.getElementById('budgetExportModal');
+    const preview = document.getElementById('budgetExportPreview');
+    if (!modal || !preview) return;
+
+    let html = `
+        <div class="bg-indigo-50 rounded-xl p-3 text-xs space-y-1">
+            <div class="font-bold text-indigo-800 text-sm mb-2">📊 סיכום תקציב</div>
+            <div class="grid grid-cols-2 gap-x-4 gap-y-1">
+                <span class="text-slate-500">יעד תקציב:</span><span class="font-bold text-slate-800">${currentMax.toLocaleString()} ₪</span>
+                <span class="text-slate-500">סה"כ הוצאות:</span><span class="font-bold text-rose-700">${totalExpenses.toLocaleString()} ₪</span>
+                <span class="text-slate-500">שולם בפועל:</span><span class="font-bold text-emerald-700">${totalPaid.toLocaleString()} ₪</span>
+                <span class="text-slate-500">נותר לספקים:</span><span class="font-bold text-amber-700">${(totalExpenses - totalPaid).toLocaleString()} ₪</span>
+                <span class="text-slate-500">פנוי לתכנון:</span><span class="font-bold text-slate-700">${Math.max(0, currentMax - totalExpenses).toLocaleString()} ₪</span>
+            </div>
+        </div>
+        <div class="mt-3">
+            <div class="font-bold text-slate-700 text-xs mb-2">פירוט הוצאות (${budget.length} פריטים)</div>
+            <div class="overflow-x-auto rounded-xl border border-slate-100">
+                <table class="w-full text-[11px]">
+                    <thead class="bg-slate-100 text-slate-600 font-bold">
+                        <tr>
+                            <th class="p-2 text-right">שם הוצאה</th>
+                            <th class="p-2 text-center">סה"כ</th>
+                            <th class="p-2 text-center">שולם</th>
+                            <th class="p-2 text-center">נותר</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-slate-100">`;
+
+    budget.forEach(exp => {
+        const expPaid = (exp.payments || []).reduce((sum, p) => sum + (p.amount || 0), 0);
+        const remaining = (exp.totalAmount || 0) - expPaid;
+        html += `<tr class="even:bg-slate-50">
+            <td class="p-2 font-semibold text-slate-800">${esc(exp.name || '')}</td>
+            <td class="p-2 text-center text-slate-700">${(exp.totalAmount || 0).toLocaleString()}</td>
+            <td class="p-2 text-center text-emerald-700 font-bold">${expPaid.toLocaleString()}</td>
+            <td class="p-2 text-center ${remaining > 0 ? 'text-amber-600' : 'text-emerald-600'} font-bold">${remaining.toLocaleString()}</td>
+        </tr>`;
+    });
+
+    html += `</tbody></table></div></div>`;
+    preview.innerHTML = html;
+    modal.classList.remove('hidden');
+}
+
+function downloadBudgetCsv() {
+    if (!_budgetExportCsv) return;
+    const blob = new Blob([_budgetExportCsv], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `תקציב_בר_מצוות_אמיתי_${new Date().toISOString().split('T')[0]}.csv`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    showToast('קובץ CSV הורד! ניתן לפתוח ב-Google Sheets 📥');
+}
+
+function copyBudgetExport() {
+    if (!_budgetExportCsv) return;
+    const text = _budgetExportCsv.replace(/^﻿/, '');
+    if (navigator.clipboard) {
+        navigator.clipboard.writeText(text).then(() => showToast('הנתונים הועתקו! הדבק ב-Google Sheets 📋'));
+    } else {
+        showToast('לא ניתן להעתיק בדפדפן זה');
     }
 }
 
